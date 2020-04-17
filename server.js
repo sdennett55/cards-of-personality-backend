@@ -17,10 +17,17 @@ io.on('connection', function(socket){
   // send state only to the newly connected user.
   // io.to(socket.id).emit('chat history', chatHistory);
 
+
   // get the mouse coordinates from the client
   socket.on('dragged card', function ({type, text, x, y}) {
-    // send the coordinates to everyone but me
+    // send the coordinates to everyone but client that sent it
     this.broadcast.emit('dragged card', {type, text, x, y});
+  });
+
+  // get the mouse coordinates from the client
+  socket.on('let go card', function ({type, text}) {
+    // send the coordinates to everyone but client that sent it
+    this.broadcast.emit('let go card', {type, text});
   });
 
   socket.on('disconnect', function(){
