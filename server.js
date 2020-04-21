@@ -16,7 +16,7 @@ io.on('connection', function(socket){
   console.log('a user connected! ', socket.id);
 
   // send state only to the newly connected user.
-  io.to(socket.id).emit('new connection', {whiteCards, players});
+  io.to(socket.id).emit('new connection', {whiteCards, blackCards, players});
 
   // let everyone know that a new player has connected
   socket.broadcast.emit('user connected', players);
@@ -26,9 +26,23 @@ io.on('connection', function(socket){
     whiteCards = newWhiteCards;
   })
 
+  // update the blackCards on the server
+   socket.on('update blackCards', function(newBlackCards) {
+    blackCards = newBlackCards;
+  })
+
   // when someone drops a white card into their deck
   socket.on('dropped in my cards', function (whiteCard) {
+    // send new players state to everyone
     this.broadcast.emit('dropped in my cards', whiteCard);
+  });
+
+  // when someone drops a black card into a player drop
+  socket.on('dropped in player drop', function ({players: newPlayers, blackCards: newBlackCards}) {
+    players = newPlayers;
+    blackCards = newBlackCards;
+    console.log({players});
+    this.broadcast.emit('dropped in player drop', ({players, blackCards}));
   });
 
   // get the mouse coordinates from the client
