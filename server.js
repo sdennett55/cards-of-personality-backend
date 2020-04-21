@@ -3,6 +3,7 @@ var http = require('http').createServer(app);
 var io = require('socket.io')(http);
 
 var players = [];
+var playersThatLeft = [];
 var whiteCards = [];
 var blackCards = [];
 
@@ -69,11 +70,27 @@ io.on('connection', function(socket){
 
   // when a specific player disconnects
   socket.on('disconnect', function(){
+
+    const playerThatLeft = players.find(user => user.id === socket.id);
+
+    const playerThatLeftIndex = playersThatLeft.findIndex(player => {
+      return player.name === playerThatLeft.name
+    });
+
+    // if the player that left already left before, remove them from playersThatLeft
+    if (playersThatLeft.find(player => player.name === playerThatLeft.name)) {
+      playersThatLeft.splice(playerThatLeftIndex, 1);
+    }
+    // track the new player that left
+    playersThatLeft.push(playerThatLeft);
+
+    // update global players variable 
     players.splice(players.findIndex(user => user.id === socket.id), 1);
+
     // send the coordinates to everyone but client that sent it
     this.broadcast.emit('user disconnected', players);
     console.log('user disconnected: ', socket.id);
-    console.log({players});
+    console.log({players, playersThatLeft});
   });
 
 });
