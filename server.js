@@ -1,4 +1,7 @@
+require('dotenv').config({ path: __dirname + '/.env' });
+const cors = require('cors');
 var app = require('express')();
+app.use(cors());
 var http = require('http').createServer(app);
 var io = require('socket.io')(http);
 
@@ -52,8 +55,9 @@ io.on('connection', function(socket){
   })
 
   // when someone drops a white card into their deck
-  socket.on('dropped in my cards', function ({passedInCard: whiteCard, players}) {
-    // send new players state to everyone
+  socket.on('dropped in my cards', function ({passedInCard: whiteCard, players: newPlayers, whiteCards: newWhiteCards}) {
+    players = newPlayers;
+    whiteCards = newWhiteCards;
     this.broadcast.emit('dropped in my cards', {whiteCard, players});
   });
 
@@ -92,11 +96,11 @@ io.on('connection', function(socket){
       const playerIndex = players.findIndex(player => player.id === id);
       players[playerIndex] = matchedPlayerThatLeft;
       players[playerIndex].id = id;
-      io.emit('player rejoins', players);
     } else {
       players = newPlayers;
-      io.emit('update players', players);
     }
+    
+    io.emit('update players', players);
   });
 
   // when a specific player disconnects
@@ -137,6 +141,6 @@ io.on('connection', function(socket){
 
 });
 
-http.listen(3001, function() {
-  console.log('listening on port 3001');
+http.listen(process.env.PORT, function() {
+  console.log(`listening on port ${process.env.PORT}`);
 })
