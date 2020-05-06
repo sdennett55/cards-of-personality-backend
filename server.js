@@ -6,6 +6,8 @@ var players = [];
 var playersThatLeft = [];
 var whiteCards = [];
 var blackCards = [];
+var submittedCards = [];
+var timer;
 
 io.on('connection', function(socket){
   if (players.length < 6) {
@@ -17,14 +19,24 @@ io.on('connection', function(socket){
   console.log('a user connected! ', socket.id);
 
   // send state only to the newly connected user.
-  io.to(socket.id).emit('new connection', {whiteCards, blackCards, players});
+  io.to(socket.id).emit('new connection', {whiteCards, blackCards, players, submittedCards});
 
   // let everyone know that a new player has connected
   socket.broadcast.emit('user connected', players);
 
   // update the whiteCards on the server
-  socket.on('update whiteCards', function(newWhiteCards) {
+  socket.on('update whiteCards', function({whiteCards: newWhiteCards, players: newPlayers}) {
     whiteCards = newWhiteCards;
+    players = newPlayers;
+    this.broadcast.emit('update players', players);
+  });
+
+  // update the whiteCards on the server
+  socket.on('update submittedCards', function(newSubmittedCards) {
+    submittedCards = newSubmittedCards;
+
+    // let everyone else know
+    this.broadcast.emit('update submittedCards', submittedCards);
   })
 
   // update the blackCards on the server
@@ -32,10 +44,17 @@ io.on('connection', function(socket){
     blackCards = newBlackCards;
   })
 
+  // update the blackCards on the server
+  socket.on('update players', function({players: newPlayers}) {
+    console.log({newPlayers});
+    players = newPlayers;
+    this.broadcast.emit('update players', players);
+  })
+
   // when someone drops a white card into their deck
-  socket.on('dropped in my cards', function (whiteCard) {
+  socket.on('dropped in my cards', function ({passedInCard: whiteCard, players}) {
     // send new players state to everyone
-    this.broadcast.emit('dropped in my cards', whiteCard);
+    this.broadcast.emit('dropped in my cards', {whiteCard, players});
   });
 
   // when someone drops a black card into a player drop
@@ -58,7 +77,6 @@ io.on('connection', function(socket){
     this.broadcast.emit('let go card', {type, text});
   });
 
-  console.log('players length: ', players.length);
   // when someone changes their player name, 
   // update players name property and emit back
   socket.on('name change', function({id, name}) {
@@ -68,8 +86,32 @@ io.on('connection', function(socket){
     }
   });
 
+  socket.on('name submit', function({players: newPlayers, myName, id}) {
+    const matchedPlayerThatLeft = playersThatLeft.find(({name}) => name === myName);
+    if (myName !== 'NEW USER' && matchedPlayerThatLeft) {
+      const playerIndex = players.findIndex(player => player.id === id);
+      players[playerIndex] = matchedPlayerThatLeft;
+      players[playerIndex].id = id;
+      io.emit('player rejoins', players);
+    } else {
+      players = newPlayers;
+      io.emit('update players', players);
+    }
+  });
+
   // when a specific player disconnects
   socket.on('disconnect', function(){
+
+    console.log('SOCKET ID OF USER THAT DISCONNECTED', socket.id);
+
+    if (timer) {
+      clearInterval(timer);
+    }
+
+    timer = setTimeout(() => {
+      playersThatLeft.length = 0;
+      console.log('cleared playersThatLeft ', playersThatLeft);
+    }, 60000);
 
     const playerThatLeft = players.find(user => user.id === socket.id);
 
