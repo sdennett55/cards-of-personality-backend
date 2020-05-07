@@ -96,6 +96,10 @@ io.on('connection', function(socket){
     this.broadcast.emit('let go card', {type, text});
   });
 
+  socket.on('card is flipped', function (isFlipped) {
+    this.broadcast.emit('card is flipped', isFlipped);
+  });
+
   // when someone changes their player name, 
   // update players name property and emit back
   socket.on('name change', function({id, name}) {
