@@ -101,7 +101,13 @@ io.on('connection', function(socket){
       players = newPlayers;
       io.emit('update players', players);
     }
-    
+  });
+
+  socket.on('restart game', ({whiteCards: newWhiteCards, blackCards: newBlackCards, players: newPlayers}) => {
+    whiteCards = newWhiteCards;
+    blackCards = newBlackCards;
+    players = newPlayers;
+    submittedCards.length = 0;
   });
 
   // when a specific player disconnects
@@ -144,4 +150,14 @@ io.on('connection', function(socket){
 
 http.listen(process.env.PORT, function() {
   console.log(`listening on port ${process.env.PORT}`);
-})
+});
+
+process.stdin.resume();
+process.stdin.setEncoding('utf8');
+
+process.stdin.on('data', function (text) {
+  if (text.trim() === 'restart') {
+    io.emit('restart game', '');
+  }
+});
+
