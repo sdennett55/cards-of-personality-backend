@@ -97,7 +97,7 @@ io.on('connection', function(socket){
   });
 
   socket.on('name submit', function({players: newPlayers, myName, id}) {
-    const matchedPlayerThatLeft = playersThatLeft.find(({name}) => name === myName);
+    const matchedPlayerThatLeft = playersThatLeft.find(player => player.name === myName);
     if (myName !== 'NEW USER' && matchedPlayerThatLeft) {
       const playerIndex = players.findIndex(player => player.id === id);
       players[playerIndex] = matchedPlayerThatLeft;
