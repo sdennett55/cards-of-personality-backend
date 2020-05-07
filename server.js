@@ -96,11 +96,12 @@ io.on('connection', function(socket){
       const playerIndex = players.findIndex(player => player.id === id);
       players[playerIndex] = matchedPlayerThatLeft;
       players[playerIndex].id = id;
+      io.emit('player rejoins', players);
     } else {
       players = newPlayers;
+      io.emit('update players', players);
     }
     
-    io.emit('update players', players);
   });
 
   // when a specific player disconnects
