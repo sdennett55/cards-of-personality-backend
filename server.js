@@ -13,6 +13,12 @@ var submittedCards = [];
 var timer;
 
 io.on('connection', function(socket){
+  if (io.engine.clientsCount > 6) {
+    console.log('Disconnected...');
+    socket.disconnect();
+    return;
+  }
+
   if (players.length < 6) {
     players.push({id: socket.id, name: 'NEW USER'});
   }
@@ -140,8 +146,7 @@ io.on('connection', function(socket){
     // update global players variable 
     players.splice(players.findIndex(user => user.id === socket.id), 1);
 
-    // send the coordinates to everyone but client that sent it
-    this.broadcast.emit('user disconnected', players);
+    io.emit('user disconnected', players);
     console.log('user disconnected: ', socket.id);
     console.log({players, playersThatLeft});
   });
@@ -158,6 +163,18 @@ process.stdin.setEncoding('utf8');
 process.stdin.on('data', function (text) {
   if (text.trim() === 'restart') {
     io.emit('restart game', '');
+  }
+
+  if (text.trim().startsWith('kick')) {
+    const socketID = text.trim().split(' ')[1];
+    const matchedPlayerIndex = players.findIndex(player => player.id === socketID);
+    
+    if (matchedPlayerIndex !== -1) {
+      io.sockets.sockets[socketID].disconnect();
+      console.log(`kicked user: ${socketID}`)
+    } else {  
+      console.log('player doesn\'t exist');
+    }
   }
 });
 
