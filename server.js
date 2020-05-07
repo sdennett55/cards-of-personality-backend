@@ -48,6 +48,15 @@ io.on('connection', function(socket){
     this.broadcast.emit('update submittedCards', submittedCards);
   })
 
+  // update the whiteCards on the server
+  socket.on('submitted a card', function({submittedCards: newSubmittedCards, players: newPlayers}) {
+    submittedCards = newSubmittedCards;
+    players = newPlayers
+
+    // let everyone else know
+    this.broadcast.emit('submitted a card', {submittedCards, players});
+  })
+
   // update the blackCards on the server
    socket.on('update blackCards', function(newBlackCards) {
     blackCards = newBlackCards;
