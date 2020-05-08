@@ -1,7 +1,7 @@
 require('dotenv').config({ path: __dirname + '/.env' });
 const cors = require('cors');
 var app = require('express')();
-app.use(cors());
+app.use(cors({origin: 'https://cards-against-steve.netlify.app'}));
 var http = require('http').createServer(app);
 var io = require('socket.io')(http);
 
