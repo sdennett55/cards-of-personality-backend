@@ -96,8 +96,8 @@ io.on('connection', function(socket){
     this.broadcast.emit('let go card', {type, text});
   });
 
-  socket.on('card is flipped', function (isFlipped) {
-    this.broadcast.emit('card is flipped', isFlipped);
+  socket.on('card is flipped', function ({isFlipped, text}) {
+    this.broadcast.emit('card is flipped', {isFlipped, text});
   });
 
   // when someone changes their player name, 
