@@ -132,6 +132,16 @@ io.on('connection', function(socket){
   // when a specific player disconnects
   socket.on('disconnect', function(){
 
+    if (io.engine.clientsCount === 0) {
+      players = [];
+      playersThatLeft = [];
+      whiteCards = [];
+      blackCards = [];
+      submittedCards = [];
+
+      return;
+    }
+
     console.log('SOCKET ID OF USER THAT DISCONNECTED', socket.id);
 
     if (timer) {
