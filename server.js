@@ -12,14 +12,16 @@ var blackCards = [];
 var submittedCards = [];
 var timer;
 
+const MAX_PLAYERS = 8;
+
 io.on('connection', function(socket){
-  if (io.engine.clientsCount > 6) {
+  if (io.engine.clientsCount > MAX_PLAYERS) {
     console.log('Disconnected...');
     socket.disconnect();
     return;
   }
 
-  if (players.length < 6) {
+  if (players.length < MAX_PLAYERS) {
     players.push({id: socket.id, name: 'NEW USER'});
   }
 
@@ -103,7 +105,7 @@ io.on('connection', function(socket){
   // when someone changes their player name, 
   // update players name property and emit back
   socket.on('name change', function({id, name}) {
-    if (players.length <= 6 && players.find(player => player.id === id)) {
+    if (players.length <= MAX_PLAYERS && players.find(player => player.id === id)) {
       players.find(player => player.id === id).name = name;
       this.broadcast.emit('name change', players);
     }
@@ -132,17 +134,17 @@ io.on('connection', function(socket){
   // when a specific player disconnects
   socket.on('disconnect', function(){
 
+    // If everyone leaves, reset the game
     if (io.engine.clientsCount === 0) {
       players = [];
       playersThatLeft = [];
       whiteCards = [];
       blackCards = [];
       submittedCards = [];
+      timer = undefined;
 
       return;
     }
-
-    console.log('SOCKET ID OF USER THAT DISCONNECTED', socket.id);
 
     if (timer) {
       clearInterval(timer);
