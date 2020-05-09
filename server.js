@@ -141,7 +141,7 @@ io.on('connection', function(socket){
     timer = setTimeout(() => {
       playersThatLeft.length = 0;
       console.log('cleared playersThatLeft ', playersThatLeft);
-    }, 60000);
+    }, 600000);
 
     const playerThatLeft = players.find(user => user.id === socket.id);
 
