@@ -1,4 +1,4 @@
-# cards-against-steve-backend
+# Cards Against Steve (backend)
 A mobile web game inspired by the popular Cards Against Humanity card game.
 
 ### `yarn start:dev`
