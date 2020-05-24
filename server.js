@@ -15,6 +15,7 @@ var playersThatLeft = [];
 var whiteCards = [];
 var blackCards = [];
 var submittedCards = [];
+var initialCardsAreSet = false;
 var timer;
 
 const MAX_PLAYERS = 8;
@@ -39,6 +40,24 @@ io.on('connection', function (socket) {
 
   // let everyone know that a new player has connected
   socket.broadcast.emit('user connected', players);
+
+  // first player to join game hits the getInitialCards endpoint and sets the initial cards for the game
+  if (!initialCardsAreSet) {
+
+    if (io.engine.clientsCount === 1) {
+      socket.on('set initialCards for game', function ({ whiteCards: newWhiteCards, blackCards: newBlackCards }) {
+        whiteCards = newWhiteCards;
+        blackCards = newBlackCards
+        initialCardsAreSet = true;
+        socket.emit('get initialCards for game', { whiteCards, blackCards });
+      });
+    } else {
+      // if a second or third user joins before the first user can even fetch the initial cards, disconnect them
+      // @todo: look into providing messaging like "refresh the page" or just a better method for dealing 
+      // with this edge case
+      socket.disconnect();
+    }
+  }
 
   // update the whiteCards on the server
   socket.on('update whiteCards', function ({ whiteCards: newWhiteCards, players: newPlayers }) {
@@ -147,6 +166,7 @@ io.on('connection', function (socket) {
       blackCards = [];
       submittedCards = [];
       timer = undefined;
+      initialCardsAreSet = false;
 
       return;
     }

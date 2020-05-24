@@ -15,6 +15,20 @@ function checkDatabase(table = 'decks', eachPageCallback, doneCallback) {
   });
 }
 
+function checkDatabasePromise(table = 'decks', eachPageCallback, doneCallback) {
+  return new Promise((resolve, reject) => {
+    var scopedRecords = [];
+    base(table).select({
+      view: "Grid view"
+    }).eachPage(function page(records, fetchNextPage) {
+      scopedRecords = [...scopedRecords, ...records];
+      eachPageCallback(records, fetchNextPage);
+    }, function done(err) {
+      resolve(doneCallback(err, scopedRecords));
+    });
+  })
+}
+
 function removeFromDatabase(id, removeCallback) {
   decksTable.destroy([id], function (err, deletedRecords) {
     if (err) {
@@ -67,4 +81,4 @@ function getRecordId(tableName = 'decks', deckName) {
   })
 }
 
-module.exports = {checkDatabase, removeFromDatabase, addRowToTable, getRecordId};
+module.exports = {checkDatabase, checkDatabasePromise, removeFromDatabase, addRowToTable, getRecordId};
