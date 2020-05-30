@@ -1,4 +1,4 @@
-# Cards Against Steve (backend)
+# Cards of Personality (backend)
 A mobile web game inspired by the popular Cards Against Humanity card game.
 
 ### `yarn start:dev`

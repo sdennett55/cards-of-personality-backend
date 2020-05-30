@@ -77,10 +77,34 @@ router.get('/api/getTable/:name', function (req, res) {
 router.post('/api/addCard', async function (req, res) {
   const { deckName, text, type } = req.body;
 
+  if (!text.replace(/\s/g, '')) {
+    return res.send(`Error: Please submit more than 0 characters for the ${type} card.`)
+  }
+
+  var tableId;
+
+  try {
+    tableId = await getRecordId('decks', deckName);
+  } catch (err) {
+    return res.send(`Error: There was an error checking this deck for this ${type} card.`);
+  }
+
+  // Check to see if the card already exists in the deck, in case some bums spoof around frontend checks
+  if (process.env.NODE_ENV  !== 'development') {
+    await checkDatabasePromise('cards', (records, fetchNextPage) => {
+      if (records.find(record => record.fields.decks.includes(tableId) && record.fields.type === type && record.fields.text.toLowerCase() === text.toLowerCase())) {
+        return res.send(`Error: This ${type} card already exists in the deck.`);
+      }
+      fetchNextPage();
+    }, (err, records) => {
+      if (err) {
+        return res.send(`Error: There was an error checking the database for this ${type} card.`);
+      }
+    });
+  }
+
   // get ID of deckName
   try {
-    const tableId = await getRecordId('decks', deckName);
-
     addRowToTable({
       table: 'cards', fields: { type, text: text, decks: [tableId] }, res, onSuccess: records => {
         // console.log('added!!!!!', records);
@@ -168,10 +192,10 @@ router.post('/api/getInitialCards', async function (req, res) {
       }
     }).map(({ fields }) => ({ ...fields }));
 
-    const blackCards = shuffle(cards.filter(card => card.type === 'black').map(({text}) => text));
-    const whiteCards = shuffle(cards.filter(card => card.type === 'white').map(({text}) => text));
+    const blackCards = shuffle(cards.filter(card => card.type === 'black').map(({ text }) => text));
+    const whiteCards = shuffle(cards.filter(card => card.type === 'white').map(({ text }) => text));
 
-    return res.send({blackCards, whiteCards});
+    return res.send({ blackCards, whiteCards });
   });
 });
 
