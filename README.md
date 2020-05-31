@@ -9,7 +9,7 @@ A mobile-first multiplayer web game inspired by the popular Cards Against Humani
 
 3. Push the repo to github, and then deploy to Heroku with this link using your github repo URL: https://heroku.com/deploy?template=URL_TO_YOUR_BACKEND_GITHUB_REPO/tree/master
 
-4. Add your [Airtable API key](https://airtable.com/account) as a config var [Heroku Dashboard](https://dashboard.heroku.com/apps) (the key name being `API_KEY`).
+4. Add your [Airtable API key](https://airtable.com/account) as a config var via [Heroku Dashboard](https://dashboard.heroku.com/apps) (Go to settings tab of your app. The key name being `API_KEY` and the value is the Airtable API key).
 
 5. Clone the [frontend](https://github.com/sdennett55/cards-of-personality-frontend).
 
