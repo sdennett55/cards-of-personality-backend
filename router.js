@@ -23,8 +23,6 @@ function shuffle(array) {
 const router = express.Router();
 
 router.get('/api/getPublicDecks', function (req, res) {
-  console.log('anything!!!');
-
   // Check Airtable
   checkDatabase('decks', (records, fetchNextPage) => {
     // return res.send('') early for some reason
@@ -40,7 +38,6 @@ router.get('/api/getPublicDecks', function (req, res) {
 
 router.get('/api/getTable/:name', function (req, res) {
   const tableName = req.params.name;
-  console.log('wtf', req.params.name);
 
   // Check Airtable
   checkDatabase('cards', (records, fetchNextPage) => {
@@ -69,8 +66,6 @@ router.get('/api/getTable/:name', function (req, res) {
       return res.send('no result');
     }
 
-    // console.log(records.map(rec => rec.fields.decks))
-    // // return res.send(records);
   });
 });
 
@@ -147,6 +142,14 @@ router.post('/api/createDeck', function (req, res) {
 });
 
 router.post('/api/getInitialCards', async function (req, res) {
+  // the first client that connects and hits this route, sets the cards for the game
+  // if cards are already set, send back an empty response
+  if (req.app.get('initialCardsAreSet')) {
+    return res.end();
+  }
+
+  req.app.set('initialCardsAreSet', true);
+  
   const { deckName } = req.body;
 
   const decksToFilterBy = await checkDatabasePromise('decks', (records, fetchNextPage) => {
