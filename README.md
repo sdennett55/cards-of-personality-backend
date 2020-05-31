@@ -1,4 +1,4 @@
-# Cards of Personality (frontend)
+# Cards of Personality (backend)
 A mobile-first multiplayer web game inspired by the popular Cards Against Humanity card game.
 
 ## How to Deploy Your Own Instance of the Game
