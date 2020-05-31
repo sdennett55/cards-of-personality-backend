@@ -2,7 +2,7 @@ require('dotenv').config({ path: __dirname + '/.env' });
 const cors = require('cors');
 var app = require('express')();
 const bodyParser = require('body-parser');
-app.use(cors(/*{ origin: 'https://cards-against-steve.netlify.app' }*/));
+app.use(cors());
 var http = require('http').createServer(app);
 var io = require('socket.io')(http);
 const router = require('./router');
