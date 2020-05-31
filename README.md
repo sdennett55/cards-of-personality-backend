@@ -17,9 +17,6 @@ A mobile-first multiplayer web game inspired by the popular Cards Against Humani
 
 8. (Optional) Specify a deck to load via the `deck` url param, e.g. [https://yourSiteName.netlify.app?deck=safe-for-work] will only load cards from the _safe-for-work_ deck.
 
-# Cards of Personality (backend)
-A mobile web game inspired by the popular Cards Against Humanity card game.
-
 ### `yarn start:dev`
 
 Runs the server in development mode.<br />
