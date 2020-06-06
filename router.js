@@ -168,10 +168,10 @@ router.post('/api/getInitialCards', async function (req, res) {
         return records.filter(record => record.fields.name === deckName || record.fields.name === 'safe-for-work' || record.fields.name === 'not-safe-for-work').map(x => x.getId());
       }
       if (hasSFWCards === 'true') {
-        return records.filter(record => record.fields.name === 'safe-for-work').map(x => x.getId());
+        return records.filter(record => record.fields.name === deckName || record.fields.name === 'safe-for-work').map(x => x.getId());
       }
       if (hasNSFWCards === 'true') {
-        return records.filter(record => record.fields.name === 'not-safe-for-work').map(x => x.getId());
+        return records.filter(record => record.fields.name === deckName || record.fields.name === 'not-safe-for-work').map(x => x.getId());
       }
 
       return records.filter(record => record.fields.name === deckName).map(x => x.getId());

@@ -57,21 +57,26 @@ io.on('connection', function (socket) {
     this.broadcast.emit('update players', players);
   });
 
-  // update the whiteCards on the server
-  socket.on('update submittedCards', function (newSubmittedCards) {
-    submittedCards = newSubmittedCards;
+  // update the submittedCards when someone discards a card
+  socket.on('update submittedCards', function (passedInCard) {
+    // remove passedInCard from submittedCards
+    const passedInCardIndex = submittedCards.findIndex(card => card.text === passedInCard.text);
+    submittedCards.splice(passedInCardIndex, 1);
 
-    // let everyone else know
-    this.broadcast.emit('update submittedCards', submittedCards);
+    // let EVERYONE know including the client that triggered this
+    io.emit('update submittedCards', submittedCards);
   })
 
   // update the whiteCards on the server
-  socket.on('submitted a card', function ({ submittedCards: newSubmittedCards, players: newPlayers }) {
-    submittedCards = newSubmittedCards;
-    players = newPlayers
+  socket.on('submitted a card', function ({socketId, passedInCard, newMyCards}) {
+    submittedCards.push(passedInCard);
 
-    // let everyone else know
-    this.broadcast.emit('submitted a card', { submittedCards, players });
+    // find current player from players and update whiteCards property to be newMyCards
+    const playerIndex = players.findIndex(player => player.id === socketId);
+    players[playerIndex].whiteCards = newMyCards;
+
+    // let EVERYONE know including the client that triggered this
+    io.emit('submitted a card', { submittedCards, players, passedInCard });
   })
 
   // update the blackCards on the server
