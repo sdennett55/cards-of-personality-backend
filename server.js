@@ -92,10 +92,21 @@ io.on('connection', function (socket) {
   })
 
   // when someone drops a white card into their deck
-  socket.on('dropped in my cards', function ({ passedInCard: whiteCard, players: newPlayers, whiteCards: newWhiteCards }) {
+  socket.on('dropped in my cards', function ({ passedInCard, socketId }) {
+
+    const indexOfPassedInCard = whiteCards.findIndex(whiteCard => whiteCard === passedInCard.text);
+    whiteCards.splice(indexOfPassedInCard, 1);
+
+    // update player whiteCards property
+    const newPlayers = players.map(player => {
+      if (player.id === socketId) {
+        player.whiteCards = [...(player.whiteCards ? player.whiteCards : []), passedInCard];
+      }
+      return player;
+    });
     players = newPlayers;
-    whiteCards = newWhiteCards;
-    this.broadcast.emit('dropped in my cards', { whiteCard, players });
+
+    io.emit('dropped in my cards', { players, whiteCards });
   });
 
   // when someone drops a black card into a player drop
