@@ -243,8 +243,8 @@ router.post("/api/getInitialCards", async function (req, res) {
         return records
           .filter(
             (record) =>
-              record.fields.name === "safe-for-work" ||
-              record.fields.name === "not-safe-for-work"
+              record.fields.name === "safe-for-work"
+              // || record.fields.name === "not-safe-for-work"
           )
           .map((x) => x.getId());
       }
