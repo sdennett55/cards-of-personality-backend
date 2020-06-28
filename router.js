@@ -282,4 +282,20 @@ router.post("/api/getInitialCards", async function (req, res) {
   );
 });
 
+router.get("/api/getActiveRooms", function (req, res) {
+  // send back list of active rooms on the server
+  const roomsWithoutCircularRefs = Object.entries(server.rooms).reduce((newObj, [roomName, room]) => {
+    const {timer, ...rest} = room;
+    newObj[roomName] = rest;
+    return newObj;
+  }, {});
+  return res.send(roomsWithoutCircularRefs);
+});
+
+router.get("/api/getPlayerInfo", function (req, res) {
+  const {id, roomName} = req.query;
+  const playerInfo = server.rooms[roomName].players.find(player => player.id === id);
+  return res.send(playerInfo);
+});
+
 module.exports = router;
