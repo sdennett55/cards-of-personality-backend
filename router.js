@@ -294,8 +294,12 @@ router.get("/api/getActiveRooms", function (req, res) {
 
 router.get("/api/getPlayerInfo", function (req, res) {
   const {id, roomName} = req.query;
-  const playerInfo = server.rooms[roomName].players.find(player => player.id === id);
-  return res.send(playerInfo);
+  try {
+    const playerInfo = server.rooms[roomName].players.find(player => player.id === id);
+    return res.send(playerInfo);
+  } catch {
+    res.end();
+  }
 });
 
 module.exports = router;
