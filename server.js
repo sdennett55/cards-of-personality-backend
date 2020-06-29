@@ -122,7 +122,7 @@ io.on("connection", function (socket) {
     if (rooms[socket.roomId].players[playerIndex]) {
       rooms[socket.roomId].players[playerIndex].whiteCards = newMyCards;
     } else {
-      console.log('Warning: Player that submitted card doesn\'t exist: ', rooms[socket.roomId].players)
+      console.log('Warning: Player that submitted card doesn\'t exist: ', rooms[socket.roomId].players, 'index: ', playerIndex);
     }
 
     // let EVERYONE know including the client that triggered this
