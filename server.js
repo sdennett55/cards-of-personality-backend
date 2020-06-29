@@ -257,7 +257,7 @@ io.on("connection", function (socket) {
   // when a specific player disconnects
   socket.on("disconnect", function () {
     // If everyone leaves, destroy the room
-    if (rooms[socket.roomId] && !rooms[socket.roomId].players.length) {
+    if (rooms[socket.roomId] && rooms[socket.roomId].players.length === 1) {
       delete rooms[socket.roomId];
       return;
     }
