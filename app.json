@@ -2,6 +2,6 @@
   "name": "Cards of Personality",
   "description": "A mobile-first multiplayer web game inspired by the popular Cards Against Humanity card game.",
   "repository": "",
-  "logo": "https://cards-of-personality.netlify.app/logo192.png",
+  "logo": "https://cardsofpersonality.com/logo192.png",
   "keywords": ["cards", "against", "humanity", "multiplayer", "game", "sockets", "websockets"]
 }
