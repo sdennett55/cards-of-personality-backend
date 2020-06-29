@@ -325,23 +325,3 @@ http.listen(process.env.PORT, function () {
 });
 
 module.exports.rooms = rooms;
-// process.stdin.resume();
-// process.stdin.setEncoding('utf8');
-
-// process.stdin.on('data', function (text) {
-//   if (text.trim() === 'restart') {
-//     io.emit('restart game', '');
-//   }
-
-//   if (text.trim().startsWith('kick')) {
-//     const socketID = text.trim().split(' ')[1];
-//     const matchedPlayerIndex = players.findIndex(player => player.id === socketID);
-
-//     if (matchedPlayerIndex !== -1) {
-//       io.sockets.sockets[socketID].disconnect();
-//       console.log(`kicked user: ${socketID}`)
-//     } else {
-//       console.log('player doesn\'t exist');
-//     }
-//   }
-// });
