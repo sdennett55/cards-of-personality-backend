@@ -267,7 +267,7 @@ io.on("connection", function (socket) {
       clearInterval(rooms[socket.roomId].timer);
     }
 
-    if (rooms[socket.roomId].playersThatLeft) {
+    if (rooms[socket.roomId] && rooms[socket.roomId].playersThatLeft) {
       rooms[socket.roomId].timer = setTimeout(() => {
         rooms[socket.roomId].playersThatLeft.length = 0;
         console.log(
