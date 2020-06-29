@@ -6,7 +6,7 @@ app.use(cors());
 var http = require("http").createServer(app);
 var io = require("socket.io")(http);
 const router = require("./router");
-const {shuffle, Game} = require("./helpers.js");
+const { shuffle, Game } = require("./helpers.js");
 
 var rooms = {};
 
@@ -17,7 +17,6 @@ const MAX_PLAYERS = 8;
 
 // when a user hits the /g path, start the websocket connection
 io.on("connection", function (socket) {
-
   socket.on("join room", function (roomId) {
     // If there's more than MAX_PLAYERS, then just disconnect any others
     // just kidding, this causes an infinite loops since we refresh the page when someone disconnects
@@ -36,12 +35,10 @@ io.on("connection", function (socket) {
     // Add roomId to socket object
     socket.roomId = roomId;
 
-
     console.log("joined room!", socket.roomId);
 
     // join the room
     socket.join(roomId);
-
 
     // let everyone know that a new player has connected
     socket.broadcast
@@ -51,7 +48,6 @@ io.on("connection", function (socket) {
     if (rooms[socket.roomId].players.length < MAX_PLAYERS) {
       rooms[socket.roomId].players.push({ id: socket.id, name: "NEW USER" });
     }
-
 
     // send state only to the newly connected user.
     if (rooms[socket.roomId].players.length >= 1) {
@@ -113,7 +109,9 @@ io.on("connection", function (socket) {
     rooms[socket.roomId].submittedCards.push(passedInCard);
 
     // randomize the submittedCards when a new one is submitted
-    rooms[socket.roomId].submittedCards = shuffle(rooms[socket.roomId].submittedCards);
+    rooms[socket.roomId].submittedCards = shuffle(
+      rooms[socket.roomId].submittedCards
+    );
 
     // find current player from players and update whiteCards property to be newMyCards
     const playerIndex = rooms[socket.roomId].players.findIndex(
@@ -175,12 +173,10 @@ io.on("connection", function (socket) {
     rooms[socket.roomId].players = newPlayers;
     rooms[socket.roomId].blackCards = newBlackCards;
     console.log({ blackCards: rooms[socket.roomId].blackCards.length });
-    this.broadcast
-      .to(socket.roomId)
-      .emit("dropped in player drop", {
-        players: rooms[socket.roomId].players,
-        blackCards: rooms[socket.roomId].blackCards,
-      });
+    this.broadcast.to(socket.roomId).emit("dropped in player drop", {
+      players: rooms[socket.roomId].players,
+      blackCards: rooms[socket.roomId].blackCards,
+    });
   });
 
   // get the mouse coordinates from the client
@@ -271,15 +267,15 @@ io.on("connection", function (socket) {
       clearInterval(rooms[socket.roomId].timer);
     }
 
-    rooms[socket.roomId].timer = setTimeout(() => {
-      if (rooms[socket.roomId].playersThatLeft) {
+    if (rooms[socket.roomId].playersThatLeft) {
+      rooms[socket.roomId].timer = setTimeout(() => {
         rooms[socket.roomId].playersThatLeft.length = 0;
         console.log(
           "cleared playersThatLeft ",
           rooms[socket.roomId].playersThatLeft
         );
-      }
-    }, 10000);
+      }, 10000);
+    }
 
     const playerThatLeft = rooms[socket.roomId].players.find(
       (user) => user.id === socket.id
@@ -287,11 +283,11 @@ io.on("connection", function (socket) {
 
     if (playerThatLeft) {
       // find the player that lefts index by the name
-      const playerThatLeftIndex = rooms[socket.roomId].playersThatLeft.findIndex(
-        (player) => {
-          return player.id === playerThatLeft.id;
-        }
-      );
+      const playerThatLeftIndex = rooms[
+        socket.roomId
+      ].playersThatLeft.findIndex((player) => {
+        return player.id === playerThatLeft.id;
+      });
 
       // if the player that left already left before, remove them from playersThatLeft
       if (
