@@ -121,6 +121,8 @@ io.on("connection", function (socket) {
     // prevent user error: TypeError: Cannot set property 'whiteCards' of undefined
     if (rooms[socket.roomId].players[playerIndex]) {
       rooms[socket.roomId].players[playerIndex].whiteCards = newMyCards;
+    } else {
+      console.log('Warning: Player that submitted card doesn\'t exist: ', rooms[socket.roomId].players)
     }
 
     // let EVERYONE know including the client that triggered this
