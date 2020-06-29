@@ -117,7 +117,11 @@ io.on("connection", function (socket) {
     const playerIndex = rooms[socket.roomId].players.findIndex(
       (player) => player.id === socketId
     );
-    rooms[socket.roomId].players[playerIndex].whiteCards = newMyCards;
+
+    // prevent user error: TypeError: Cannot set property 'whiteCards' of undefined
+    if (rooms[socket.roomId].players[playerIndex]) {
+      rooms[socket.roomId].players[playerIndex].whiteCards = newMyCards;
+    }
 
     // let EVERYONE know including the client that triggered this
     io.emit("submitted a card", {
