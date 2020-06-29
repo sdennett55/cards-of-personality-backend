@@ -259,7 +259,8 @@ io.on("connection", function (socket) {
   // when a specific player disconnects
   socket.on("disconnect", function () {
     // If everyone leaves, destroy the room
-    if (rooms[socket.roomId] && rooms[socket.roomId].players.length === 1) {
+    if (rooms[socket.roomId] && rooms[socket.roomId].players.length <= 1) {
+      clearTimeout(rooms[socket.roomId].timer);
       delete rooms[socket.roomId];
       return;
     }
@@ -269,8 +270,9 @@ io.on("connection", function (socket) {
       return;
     }
 
+    // reset the timer before you start it again
     if (rooms[socket.roomId] && rooms[socket.roomId].timer) {
-      clearInterval(rooms[socket.roomId].timer);
+      clearTimeout(rooms[socket.roomId].timer);
     }
 
     if (rooms[socket.roomId] && rooms[socket.roomId].playersThatLeft) {
@@ -280,7 +282,7 @@ io.on("connection", function (socket) {
           "cleared playersThatLeft ",
           rooms[socket.roomId].playersThatLeft
         );
-      }, 10000);
+      }, 600000);
     }
 
     const playerThatLeft = rooms[socket.roomId].players.find(
