@@ -272,12 +272,14 @@ io.on("connection", function (socket) {
     }
 
     rooms[socket.roomId].timer = setTimeout(() => {
-      rooms[socket.roomId].playersThatLeft.length = 0;
-      console.log(
-        "cleared playersThatLeft ",
-        rooms[socket.roomId].playersThatLeft
-      );
-    }, 600000);
+      if (rooms[socket.roomId].playersThatLeft) {
+        rooms[socket.roomId].playersThatLeft.length = 0;
+        console.log(
+          "cleared playersThatLeft ",
+          rooms[socket.roomId].playersThatLeft
+        );
+      }
+    }, 10000);
 
     const playerThatLeft = rooms[socket.roomId].players.find(
       (user) => user.id === socket.id
