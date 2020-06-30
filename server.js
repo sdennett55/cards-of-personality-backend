@@ -122,7 +122,14 @@ io.on("connection", function (socket) {
     if (rooms[socket.roomId].players[playerIndex]) {
       rooms[socket.roomId].players[playerIndex].whiteCards = newMyCards;
     } else {
-      console.log('Warning: Player that submitted card doesn\'t exist. players: ', rooms[socket.roomId].players, 'socketId: ', socketId, ' index: ', playerIndex);
+      console.log(
+        "Warning: Player that submitted card doesn't exist. players: ",
+        rooms[socket.roomId].players,
+        "socketId: ",
+        socketId,
+        " index: ",
+        playerIndex
+      );
     }
 
     // let EVERYONE know including the client that triggered this
@@ -138,7 +145,7 @@ io.on("connection", function (socket) {
     rooms[socket.roomId].blackCards = newBlackCards;
   });
 
-  // update the blackCards on the server
+  // update the players on the server
   socket.on("update players", function ({ players: newPlayers }) {
     rooms[socket.roomId].players = newPlayers;
     this.broadcast
@@ -321,10 +328,17 @@ io.on("connection", function (socket) {
       rooms[socket.roomId].players
     );
     console.log("user disconnected: ", socket.id);
-    console.log({
-      players: rooms[socket.roomId].players,
-      playersThatLeft: rooms[socket.roomId].playersThatLeft,
-    });
+
+    if (
+      rooms[socket.roomId] &&
+      rooms[socket.roomId].players &&
+      rooms[socket.roomId].playersThatLeft
+    ) {
+      console.log({
+        players: rooms[socket.roomId].players,
+        playersThatLeft: rooms[socket.roomId].playersThatLeft,
+      });
+    }
   });
 });
 
