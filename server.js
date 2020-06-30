@@ -247,7 +247,7 @@ io.on("connection", function (socket) {
   });
 
   socket.on("name submit", function ({ players: newPlayers, myName, id }) {
-    if (!socket.roomId) {
+    if (!socket.roomId && !rooms[socket.roomId]) {
       return;
     }
     const matchedPlayerThatLeft = rooms[socket.roomId].playersThatLeft.find(
