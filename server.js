@@ -15,7 +15,7 @@ app.use("/", router);
 
 const MAX_PLAYERS = 8;
 
-// when a user hits the /g path, start the websocket connection
+// when a user hits the /game path, start the websocket connection
 io.on("connection", function (socket) {
   socket.on("join room", function (roomId) {
     // If there's more than MAX_PLAYERS, then just disconnect any others
@@ -35,7 +35,7 @@ io.on("connection", function (socket) {
     // Add roomId to socket object
     socket.roomId = roomId;
 
-    console.log("joined room!", socket.roomId);
+    console.log("joined room!", socket.roomId, "socket.id: ", socket.id);
 
     // join the room
     socket.join(roomId);
@@ -106,6 +106,12 @@ io.on("connection", function (socket) {
     passedInCard,
     newMyCards,
   }) {
+    // 2020-06-30T14:08:31.086551+00:00 app[web.1]: /app/server.js:109
+    // 2020-06-30T14:08:31.086569+00:00 app[web.1]:     rooms[socket.roomId].submittedCards.push(passedInCard);
+    // 2020-06-30T14:08:31.086570+00:00 app[web.1]:                          ^
+    // 2020-06-30T14:08:31.086571+00:00 app[web.1]:
+    // 2020-06-30T14:08:31.086571+00:00 app[web.1]: TypeError: Cannot read property 'submittedCards' of undefined
+    console.log('Warning: rooms[socket.roomId] is undefined. ', `socket.roomId: ${socket.roomId}`, `rooms[socket.roomId]: ${rooms[socket.roomId]}`)
     rooms[socket.roomId].submittedCards.push(passedInCard);
 
     // randomize the submittedCards when a new one is submitted
