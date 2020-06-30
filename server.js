@@ -41,9 +41,9 @@ io.on("connection", function (socket) {
     socket.join(roomId);
 
     // let everyone know that a new player has connected
-    socket.broadcast
-      .to(socket.roomId)
-      .emit("user connected", { players: rooms[socket.roomId].players });
+    io.to(socket.roomId).emit("user connected", {
+      players: rooms[socket.roomId].players,
+    });
 
     if (rooms[socket.roomId].players.length < MAX_PLAYERS) {
       rooms[socket.roomId].players.push({ id: socket.id, name: "NEW USER" });
@@ -83,9 +83,7 @@ io.on("connection", function (socket) {
   }) {
     rooms[socket.roomId].whiteCards = newWhiteCards;
     rooms[socket.roomId].players = newPlayers;
-    this.broadcast
-      .to(socket.roomId)
-      .emit("update players", rooms[socket.roomId].players);
+    io.to(socket.roomId).emit("update players", rooms[socket.roomId].players);
   });
 
   // update the submittedCards when someone discards a card
@@ -162,14 +160,6 @@ io.on("connection", function (socket) {
     rooms[socket.roomId].blackCards = newBlackCards;
   });
 
-  // update the players on the server
-  socket.on("update players", function ({ players: newPlayers }) {
-    rooms[socket.roomId].players = newPlayers;
-    this.broadcast
-      .to(socket.roomId)
-      .emit("update players", rooms[socket.roomId].players);
-  });
-
   // when someone drops a white card into their deck
   socket.on("dropped in my cards", function ({ passedInCard, socketId }) {
     const indexOfPassedInCard = rooms[socket.roomId].whiteCards.findIndex(
@@ -240,9 +230,7 @@ io.on("connection", function (socket) {
       rooms[socket.roomId].players.find(
         (player) => player.id === id
       ).name = name;
-      this.broadcast
-        .to(socket.roomId)
-        .emit("name change", rooms[socket.roomId].players);
+      io.to(socket.roomId).emit("name change", rooms[socket.roomId].players);
     }
   });
 
