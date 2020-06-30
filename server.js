@@ -59,7 +59,7 @@ io.on("connection", function (socket) {
       });
     }
 
-    socket.emit("joined a room", roomId);
+    io.to(socket.roomId).emit("joined a room", roomId);
   });
 
   // first player to join game hits the getInitialCards endpoint and sets the initial cards for the game
@@ -70,7 +70,7 @@ io.on("connection", function (socket) {
     rooms[socket.roomId].whiteCards = newWhiteCards;
     rooms[socket.roomId].blackCards = newBlackCards;
 
-    io.emit("get initialCards for game", {
+    io.to(socket.roomId).emit("get initialCards for game", {
       whiteCards: rooms[socket.roomId].whiteCards,
       blackCards: rooms[socket.roomId].blackCards,
     });
@@ -97,7 +97,10 @@ io.on("connection", function (socket) {
     rooms[socket.roomId].submittedCards.splice(passedInCardIndex, 1);
 
     // let EVERYONE know including the client that triggered this
-    io.emit("update submittedCards", rooms[socket.roomId].submittedCards);
+    io.to(socket.roomId).emit(
+      "update submittedCards",
+      rooms[socket.roomId].submittedCards
+    );
   });
 
   // update the whiteCards on the server
@@ -111,7 +114,12 @@ io.on("connection", function (socket) {
     // 2020-06-30T14:08:31.086570+00:00 app[web.1]:                          ^
     // 2020-06-30T14:08:31.086571+00:00 app[web.1]:
     // 2020-06-30T14:08:31.086571+00:00 app[web.1]: TypeError: Cannot read property 'submittedCards' of undefined
-    console.log('Warning: rooms[socket.roomId] is undefined. ', `socket.roomId: ${socket.roomId}`, 'rooms: ', Object.keys(rooms), `rooms[socket.roomId]: ${JSON.stringify(rooms[socket.roomId])}`)
+    console.log(
+      "Warning: rooms[socket.roomId] is undefined. ",
+      `socket.roomId: ${socket.roomId}`,
+      "rooms: ",
+      Object.keys(rooms)
+    );
     rooms[socket.roomId].submittedCards.push(passedInCard);
 
     // randomize the submittedCards when a new one is submitted
@@ -139,7 +147,7 @@ io.on("connection", function (socket) {
     }
 
     // let EVERYONE know including the client that triggered this
-    io.emit("submitted a card", {
+    io.to(socket.roomId).emit("submitted a card", {
       submittedCards: rooms[socket.roomId].submittedCards,
       players: rooms[socket.roomId].players,
       passedInCard,
