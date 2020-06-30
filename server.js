@@ -111,7 +111,7 @@ io.on("connection", function (socket) {
     // 2020-06-30T14:08:31.086570+00:00 app[web.1]:                          ^
     // 2020-06-30T14:08:31.086571+00:00 app[web.1]:
     // 2020-06-30T14:08:31.086571+00:00 app[web.1]: TypeError: Cannot read property 'submittedCards' of undefined
-    console.log('Warning: rooms[socket.roomId] is undefined. ', `socket.roomId: ${socket.roomId}`, `rooms[socket.roomId]: ${rooms[socket.roomId]}`)
+    console.log('Warning: rooms[socket.roomId] is undefined. ', `socket.roomId: ${socket.roomId}`, 'rooms: ', Object.keys(rooms), `rooms[socket.roomId]: ${JSON.stringify(rooms[socket.roomId])}`)
     rooms[socket.roomId].submittedCards.push(passedInCard);
 
     // randomize the submittedCards when a new one is submitted
