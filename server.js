@@ -114,12 +114,15 @@ io.on("connection", function (socket) {
     // 2020-06-30T14:08:31.086570+00:00 app[web.1]:                          ^
     // 2020-06-30T14:08:31.086571+00:00 app[web.1]:
     // 2020-06-30T14:08:31.086571+00:00 app[web.1]: TypeError: Cannot read property 'submittedCards' of undefined
-    console.log(
-      "Warning: rooms[socket.roomId] is undefined. ",
-      `socket.roomId: ${socket.roomId}`,
-      "rooms: ",
-      Object.keys(rooms)
-    );
+    if (!rooms[socket.roomId]) {
+      console.log(
+        "Warning: rooms[socket.roomId] is undefined. ",
+        `socket.roomId: ${socket.roomId}`,
+        `typeof socket.roomId ${typeof socket.roomId}`,
+        "rooms: ",
+        Object.keys(rooms)
+      );
+    }
     rooms[socket.roomId].submittedCards.push(passedInCard);
 
     // randomize the submittedCards when a new one is submitted
@@ -227,7 +230,7 @@ io.on("connection", function (socket) {
   // when someone changes their player name,
   // update players name property and emit back
   socket.on("name change", function ({ id, name }) {
-    if (!socket.roomId) {
+    if (!socket.roomId && !rooms[socket.roomId]) {
       return;
     }
     if (
