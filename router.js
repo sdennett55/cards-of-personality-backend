@@ -10,6 +10,14 @@ const {shuffle} = require("./helpers.js");
 
 const router = express.Router();
 
+router.post("/api/checkAvailableRooms", function(req, res) {
+  if (Object.keys(server.rooms).includes(req.body.roomName)) {
+    return res.send('game exists');
+  }
+
+  return res.end();
+});
+
 router.get("/api/getPublicDecks", function (req, res) {
   // Check Airtable
   checkDatabase(
