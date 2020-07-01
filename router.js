@@ -6,13 +6,13 @@ const {
   getRecordId,
 } = require("./database");
 const server = require("./server");
-const {shuffle} = require("./helpers.js");
+const { shuffle } = require("./helpers.js");
 
 const router = express.Router();
 
-router.post("/api/checkAvailableRooms", function(req, res) {
+router.post("/api/checkAvailableRooms", function (req, res) {
   if (Object.keys(server.rooms).includes(req.body.roomName)) {
-    return res.send('game exists');
+    return res.send("game exists");
   }
 
   return res.end();
@@ -178,7 +178,10 @@ router.post("/api/getInitialCards", async function (req, res) {
 
   // the first client that connects and hits this route, sets the cards for the game
   // if cards are already set, send back an empty response
-  console.log('hitting getInitialCards route', server.rooms[roomId] ? server.rooms[roomId].blackCards.length : 'blah');
+  console.log(
+    "hitting getInitialCards route",
+    server.rooms[roomId] ? server.rooms[roomId].blackCards.length : "blah"
+  );
   if (server.rooms[roomId]) {
     if (server.rooms[roomId].initialCardsAreSet) {
       return res.end();
@@ -191,7 +194,7 @@ router.post("/api/getInitialCards", async function (req, res) {
 
   // so we're not setting the initialcardsareset, because the room doesn't exist first
 
-  console.log('getting initial cards it seems');
+  console.log("getting initial cards it seems");
 
   const decksToFilterBy = await checkDatabasePromise(
     "decks",
@@ -250,9 +253,8 @@ router.post("/api/getInitialCards", async function (req, res) {
         // if deck doesn't exist
         return records
           .filter(
-            (record) =>
-              record.fields.name === "safe-for-work"
-              // || record.fields.name === "not-safe-for-work"
+            (record) => record.fields.name === "safe-for-work"
+            // || record.fields.name === "not-safe-for-work"
           )
           .map((x) => x.getId());
       }
@@ -292,18 +294,38 @@ router.post("/api/getInitialCards", async function (req, res) {
 
 router.get("/api/getActiveRooms", function (req, res) {
   // send back list of active rooms on the server
-  const roomsWithoutCircularRefs = Object.entries(server.rooms).reduce((newObj, [roomName, room]) => {
-    const {timer, ...rest} = room;
-    newObj[roomName] = rest;
-    return newObj;
-  }, {});
+  const roomsWithoutCircularRefs = Object.entries(server.rooms).reduce(
+    (newObj, [roomName, room]) => {
+      const { timer, ...rest } = room;
+      newObj[roomName] = rest;
+      return newObj;
+    },
+    {}
+  );
+  return res.send(roomsWithoutCircularRefs);
+});
+
+router.get("/api/getPublicRooms", function (req, res) {
+  // send back list of active rooms on the server
+  const roomsWithoutCircularRefs = Object.entries(server.rooms).reduce(
+    (newObj, [roomName, room]) => {
+      if (!room.isPrivate && room.players.length < 8) {
+        const { timer, ...rest } = room;
+        newObj[roomName] = rest;
+      }
+      return newObj;
+    },
+    {}
+  );
   return res.send(roomsWithoutCircularRefs);
 });
 
 router.get("/api/getPlayerInfo", function (req, res) {
-  const {id, roomName} = req.query;
+  const { id, roomName } = req.query;
   try {
-    const playerInfo = server.rooms[roomName].players.find(player => player.id === id);
+    const playerInfo = server.rooms[roomName].players.find(
+      (player) => player.id === id
+    );
     return res.send(playerInfo);
   } catch {
     res.end();

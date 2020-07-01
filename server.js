@@ -62,6 +62,12 @@ io.on("connection", function (socket) {
     io.to(socket.roomId).emit("joined a room", roomId);
   });
 
+  socket.on("set game as private", function() {
+    rooms[socket.roomId].isPrivate = true;
+
+    console.log('set game as private, rooms: ', rooms);
+  });
+
   // first player to join game hits the getInitialCards endpoint and sets the initial cards for the game
   socket.on("set initialCards for game", function ({
     whiteCards: newWhiteCards,
@@ -253,20 +259,6 @@ io.on("connection", function (socket) {
       io.to(socket.roomId).emit("update players", rooms[socket.roomId].players);
     }
   });
-
-  socket.on(
-    "restart game",
-    ({
-      whiteCards: newWhiteCards,
-      blackCards: newBlackCards,
-      players: newPlayers,
-    }) => {
-      rooms[socket.roomId].whiteCards = newWhiteCards;
-      rooms[socket.roomId].blackCards = newBlackCards;
-      rooms[socket.roomId].players = newPlayers;
-      rooms[socket.roomId].submittedCards.length = 0;
-    }
-  );
 
   // when a specific player disconnects
   socket.on("disconnect", function () {

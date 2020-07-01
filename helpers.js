@@ -28,6 +28,7 @@ function Game() {
   this.submittedCards = [];
   this.timer;
   this.initialCardsAreSet = false;
+  this.isPrivate = false;
 }
 
 module.exports = {shuffle, Game};
