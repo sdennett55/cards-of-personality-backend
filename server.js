@@ -260,6 +260,10 @@ io.on("connection", function (socket) {
     }
   });
 
+  socket.on("sent message to chat", function ({msg, from}){
+    io.to(socket.roomId).emit('receive message from chat', {msg, from});
+  })
+
   // when a specific player disconnects
   socket.on("disconnect", function () {
     // If everyone leaves, destroy the room
