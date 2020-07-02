@@ -62,10 +62,10 @@ io.on("connection", function (socket) {
     io.to(socket.roomId).emit("joined a room", roomId);
   });
 
-  socket.on("set game as private", function() {
+  socket.on("set game as private", function () {
     rooms[socket.roomId].isPrivate = true;
 
-    console.log('set game as private, rooms: ', rooms);
+    console.log("set game as private, rooms: ", rooms);
   });
 
   // first player to join game hits the getInitialCards endpoint and sets the initial cards for the game
@@ -260,9 +260,11 @@ io.on("connection", function (socket) {
     }
   });
 
-  socket.on("sent message to chat", function ({msg, from}){
-    io.to(socket.roomId).emit('receive message from chat', {msg, from});
-  })
+  socket.on("sent message to chat", function ({ msg, from }) {
+    this.broadcast
+      .to(socket.roomId)
+      .emit("receive message from chat", { msg, from });
+  });
 
   // when a specific player disconnects
   socket.on("disconnect", function () {
