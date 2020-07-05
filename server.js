@@ -1,4 +1,5 @@
 require("dotenv").config({ path: __dirname + "/.env" });
+const mongoose = require('mongoose');
 const cors = require("cors");
 var app = require("express")();
 const bodyParser = require("body-parser");
@@ -7,6 +8,10 @@ var http = require("http").createServer(app);
 var io = require("socket.io")(http);
 const router = require("./router");
 const { shuffle, Game } = require("./helpers.js");
+
+mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log('Connected to MongoDB...'))
+  .catch(err => console.error('Failed to connect to MongoDB...', err));
 
 var rooms = {};
 

@@ -1,12 +1,8 @@
 const express = require("express");
-const {
-  checkDatabase,
-  checkDatabasePromise,
-  addRowToTable,
-  getRecordId,
-} = require("./database");
 const server = require("./server");
 const { shuffle } = require("./helpers.js");
+const { getPublicDecks, createDeck, getDeck } = require('./models/deck');
+const { getCardsFromDeck, addCard } = require('./models/card');
 
 const router = express.Router();
 
@@ -18,65 +14,29 @@ router.post("/api/checkAvailableRooms", function (req, res) {
   return res.end();
 });
 
-router.get("/api/getPublicDecks", function (req, res) {
-  // Check Airtable
-  checkDatabase(
-    "decks",
-    (records, fetchNextPage) => {
-      // return res.send('') early for some reason
-      fetchNextPage();
-    },
-    (err, records) => {
-      if (err) {
-        res.send(
-          `Error: There was an error when checking the database: ${err}`
-        );
-      }
-
-      return res.send(records.map(({ fields }) => ({ ...fields })));
-    }
-  );
+router.get("/api/getPublicDecks", async function (req, res) {
+  try {
+    const allPublicDecks = await getPublicDecks();
+    return res.send(allPublicDecks);
+  } catch (err) {
+    return res.status(500).send('Error: There was an issue retrieving public decks...', err.message);
+  }
 });
 
-router.get("/api/getTable/:name", function (req, res) {
-  const tableName = req.params.name;
+router.get("/api/getCardsFromDeck/:name", async function (req, res) {
+  const deckName = req.params.name;
 
-  // Check Airtable
-  checkDatabase(
-    "cards",
-    (records, fetchNextPage) => {
-      // return res.send('') early for some reason
-      fetchNextPage();
-    },
-    async (err, records) => {
-      if (err) {
-        console.error(`There was an error when checking the database: ${err}`);
-        return res.send("no result");
-      }
+  try {
+    const cardsFromDeck = await getCardsFromDeck(deckName);
+    return res.send(cardsFromDeck);
+  } catch (err) {
+    return res.status(500).send('Error: There was an issue retrieving cards from the deck...', err.message);
+  }
 
-      // get ID of deckName
-      try {
-        const tableId = await getRecordId("decks", tableName);
-
-        const matches = records
-          .filter((rec) => {
-            if (rec.fields.decks) {
-              return rec.fields.decks[0] === tableId;
-            }
-          })
-          .map(({ fields }) => ({ ...fields }));
-
-        return res.send(matches);
-      } catch (err) {
-        console.log(`Promise failed due to error: ${err}`);
-        return res.send("no result");
-      }
-    }
-  );
 });
 
 router.post("/api/addCard", async function (req, res) {
-  const { deckName, text, type } = req.body;
+  const { deckName: deck, text, type } = req.body;
 
   if (!text.replace(/\s/g, "")) {
     return res.send(
@@ -84,93 +44,43 @@ router.post("/api/addCard", async function (req, res) {
     );
   }
 
-  var tableId;
-
+  // check if card already exists in the deck
   try {
-    tableId = await getRecordId("decks", deckName);
+    const cardsFromDeck = await getCardsFromDeck(deck);
+    const cardExists = cardsFromDeck.find(({ text: newText, type }) => type === type && text === newText);
+
+    if (cardExists) {
+      return res.send(
+        `Error: This ${type} card of text ${text} already exists in the deck.`
+      );
+    }
   } catch (err) {
-    return res.send(
-      `Error: There was an error checking this deck for this ${type} card.`
-    );
+    return res.status(500).send('Error: There was an issue retrieving cards from the deck when adding a new card...', err.message);
   }
 
-  // Check to see if the card already exists in the deck, in case some bums spoof around frontend checks
-  if (process.env.NODE_ENV !== "development") {
-    await checkDatabasePromise(
-      "cards",
-      (records, fetchNextPage) => {
-        if (
-          records.find(
-            (record) =>
-              record.fields.decks.includes(tableId) &&
-              record.fields.type === type &&
-              record.fields.text.toLowerCase() === text.toLowerCase()
-          )
-        ) {
-          return res.send(
-            `Error: This ${type} card already exists in the deck.`
-          );
-        }
-        fetchNextPage();
-      },
-      (err, records) => {
-        if (err) {
-          return res.send(
-            `Error: There was an error checking the database for this ${type} card.`
-          );
-        }
-      }
-    );
-  }
 
-  // get ID of deckName
   try {
-    addRowToTable({
-      table: "cards",
-      fields: { type, text: text, decks: [tableId] },
-      res,
-      onSuccess: (records) => {
-        // console.log('added!!!!!', records);
-        return res.send("Success!");
-      },
-    });
-
-    console.log(text);
+    await addCard({ type, text, deck });
+    return res.send('Success!');
   } catch (err) {
-    console.log(`Promise failed due to error: ${err}`);
+    return res.status(500).send('Error: There was an issue retrieving cards from the deck...', err.message);
   }
 });
 
-router.post("/api/createDeck", function (req, res) {
+router.post("/api/createDeck", async function (req, res) {
   const { deckName } = req.body;
 
-  checkDatabase(
-    "decks",
-    (records, fetchNextPage) => {
-      // return res.send('') early for some reason
-      fetchNextPage();
-    },
-    (err, records) => {
-      if (err) {
-        console.error(`There was an error when checking the database: ${err}`);
-      }
+  const deckExists = await getDeck(deckName);
+  if (deckExists) {
+    return res.send("Error: This deck already exists.");
+  }
 
-      if (records.find((record) => record.fields.name === deckName)) {
-        return res.send("Error: This deck already exists.");
-      }
-
-      // add new row to decks table, @todo check if "name" value exists first
-      addRowToTable({
-        table: "decks",
-        fields: { name: deckName, isPublic: "true" },
-        onSuccess: (records) => {
-          console.log(records);
-          return res.send("Success!");
-        },
-      });
-      console.log(deckName);
-    }
-  );
+  try {
+    await createDeck({ name: deckName, isPublic: true });
+    return res.send("Success!");
+  } catch (err) {
+    return res.status(500).send("Error: There was an issue saving this deck to the database...", err.message);
+  }
 });
 
 router.post("/api/getInitialCards", async function (req, res) {
@@ -189,107 +99,44 @@ router.post("/api/getInitialCards", async function (req, res) {
 
     server.rooms[roomId].initialCardsAreSet = true;
     console.log("initial cards are set!");
-    // console.log(server.rooms[roomId]);
   }
 
-  // so we're not setting the initialcardsareset, because the room doesn't exist first
+  try {
+    let totalCards = [];
 
-  console.log("getting initial cards it seems");
+    if (deckName) {
+      const { hasSFWCards, hasNSFWCards } = await getDeck(deckName);
+      const cardsFromDeck = await getCardsFromDeck(deckName);
+      totalCards.push(...cardsFromDeck);
 
-  const decksToFilterBy = await checkDatabasePromise(
-    "decks",
-    (records, fetchNextPage) => {
-      fetchNextPage();
-    },
-    (err, records) => {
-      if (err) {
-        console.error(`There was an error when checking the database: ${err}`);
+      if (hasSFWCards) {
+        const SFWCards = await getCardsFromDeck('safe-for-work');
+        totalCards.push(...SFWCards);
       }
-
-      const matchedDeck = records.find(
-        (record) => record.fields.name === deckName
-      );
-      // if the deck exists
-      if (matchedDeck) {
-        const {
-          name: deckName,
-          hasSFWCards,
-          hasNSFWCards,
-        } = matchedDeck.fields;
-
-        if (hasSFWCards === "true" && hasNSFWCards === "true") {
-          return records
-            .filter(
-              (record) =>
-                record.fields.name === deckName ||
-                record.fields.name === "safe-for-work" ||
-                record.fields.name === "not-safe-for-work"
-            )
-            .map((x) => x.getId());
-        }
-        if (hasSFWCards === "true") {
-          return records
-            .filter(
-              (record) =>
-                record.fields.name === deckName ||
-                record.fields.name === "safe-for-work"
-            )
-            .map((x) => x.getId());
-        }
-        if (hasNSFWCards === "true") {
-          return records
-            .filter(
-              (record) =>
-                record.fields.name === deckName ||
-                record.fields.name === "not-safe-for-work"
-            )
-            .map((x) => x.getId());
-        }
-
-        return records
-          .filter((record) => record.fields.name === deckName)
-          .map((x) => x.getId());
-      } else {
-        // if deck doesn't exist
-        return records
-          .filter(
-            (record) => record.fields.name === "safe-for-work"
-            // || record.fields.name === "not-safe-for-work"
-          )
-          .map((x) => x.getId());
+      if (hasNSFWCards) {
+        const NSFWCards = await getCardsFromDeck('not-safe-for-work');
+        totalCards.push(...NSFWCards);
       }
+    } else {
+      // if there's no deck query param, load SFW deck by default
+      const SFWCards = await getCardsFromDeck('safe-for-work');
+      totalCards.push(...SFWCards);
     }
-  );
 
-  checkDatabase(
-    "cards",
-    (records, fetchNextPage) => {
-      fetchNextPage();
-    },
-    (err, records) => {
-      if (err) {
-        console.error(`There was an error when checking the database: ${err}`);
-      }
 
-      // get cards based on if their decks field exists in decksToFilterBy
-      const cards = records
-        .filter((record) => {
-          for (const deckId of record.fields.decks) {
-            return decksToFilterBy.includes(deckId);
-          }
-        })
-        .map(({ fields }) => ({ ...fields }));
 
-      const blackCards = shuffle(
-        cards.filter((card) => card.type === "black").map(({ text }) => text)
-      );
-      const whiteCards = shuffle(
-        cards.filter((card) => card.type === "white").map(({ text }) => text)
-      );
 
-      return res.send({ blackCards, whiteCards });
-    }
-  );
+    const blackCards = shuffle(totalCards.filter(({ type }) => type === 'black').map(({ text }) => text));
+    const whiteCards = shuffle(totalCards.filter(({ type }) => type === 'white').map(({ text }) => text));
+
+    // just send back array of text for each
+    // shuffle them first
+    return res.send({ blackCards, whiteCards });
+  } catch (err) {
+    return res.status(500).send('Error: There was an issue retrieving initial cards from this deck...', err.message);
+  }
+
+
 });
 
 router.get("/api/getActiveRooms", function (req, res) {
