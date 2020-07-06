@@ -26,9 +26,27 @@ router.get("/api/getPublicDecks", async function (req, res) {
 router.get("/api/getCardsFromDeck/:name", async function (req, res) {
   const deckName = req.params.name;
 
+  let totalCards = [];
+
   try {
+    const deckExists = await getDeck(deckName);
+    const { hasSFWCards, hasNSFWCards } = deckExists;
+    if (!deckExists) {
+      return res.send("no result");
+    }
+
+    if (hasSFWCards || hasNSFWCards) {
+      const SFWCards = await getCardsFromDeck('safe-for-work');
+      totalCards.push(...SFWCards);
+    }
+    if (hasNSFWCards) {
+      const NSFWCards = await getCardsFromDeck('not-safe-for-work');
+      totalCards.push(...NSFWCards);
+    }
+
     const cardsFromDeck = await getCardsFromDeck(deckName);
-    return res.send(cardsFromDeck);
+    totalCards.push(...cardsFromDeck);
+    return res.send(totalCards);
   } catch (err) {
     return res.status(500).send('Error: There was an issue retrieving cards from the deck...', err.message);
   }
@@ -36,7 +54,7 @@ router.get("/api/getCardsFromDeck/:name", async function (req, res) {
 });
 
 router.post("/api/addCard", async function (req, res) {
-  const { deckName: deck, text, type } = req.body;
+  const { deckName: deck, text, type, secret } = req.body;
 
   if (!text.replace(/\s/g, "")) {
     return res.send(
@@ -44,14 +62,38 @@ router.post("/api/addCard", async function (req, res) {
     );
   }
 
+  // Don't allow folks to try to hit this endpoint and update these two decks
+  // Requires a secret key 
+  if ((deck === 'safe-for-work' || deck === 'not-safe-for-work') && secret !== process.env.LOCKED_DECK_SECRET) {
+    return res.send(
+      `Error: You do not have permissions to add a ${type} card to this deck.`
+    );
+  }
+
   // check if card already exists in the deck
   try {
+    let totalCards = [];
+
     const cardsFromDeck = await getCardsFromDeck(deck);
-    const cardExists = cardsFromDeck.find(({ text: newText, type }) => type === type && text === newText);
+    const { hasSFWCards, hasNSFWCards } = await getDeck(deck);
+    totalCards.push(...cardsFromDeck);
+
+    if (hasSFWCards || hasNSFWCards) {
+      const SFWCards = await getCardsFromDeck('safe-for-work');
+      totalCards.push(...SFWCards);
+    }
+    if (hasNSFWCards) {
+      const NSFWCards = await getCardsFromDeck('not-safe-for-work');
+      totalCards.push(...NSFWCards);
+    }
+
+    const cardExists = totalCards.find(({ text: newText, type: newType }) => {
+      return type === newType && text === newText
+    });
 
     if (cardExists) {
       return res.send(
-        `Error: This ${type} card of text ${text} already exists in the deck.`
+        `Error: This ${type} card already exists in the deck.`
       );
     }
   } catch (err) {
@@ -68,7 +110,7 @@ router.post("/api/addCard", async function (req, res) {
 });
 
 router.post("/api/createDeck", async function (req, res) {
-  const { deckName } = req.body;
+  const { deckName, isPrivate, hasSFWCards, hasNSFWCards } = req.body;
 
   const deckExists = await getDeck(deckName);
   if (deckExists) {
@@ -76,7 +118,7 @@ router.post("/api/createDeck", async function (req, res) {
   }
 
   try {
-    await createDeck({ name: deckName, isPublic: true });
+    await createDeck({ name: deckName, isPublic: !isPrivate, hasSFWCards, hasNSFWCards });
     return res.send("Success!");
   } catch (err) {
     return res.status(500).send("Error: There was an issue saving this deck to the database...", err.message);
@@ -109,7 +151,7 @@ router.post("/api/getInitialCards", async function (req, res) {
       const cardsFromDeck = await getCardsFromDeck(deckName);
       totalCards.push(...cardsFromDeck);
 
-      if (hasSFWCards) {
+      if (hasSFWCards || hasNSFWCards) {
         const SFWCards = await getCardsFromDeck('safe-for-work');
         totalCards.push(...SFWCards);
       }
@@ -122,9 +164,6 @@ router.post("/api/getInitialCards", async function (req, res) {
       const SFWCards = await getCardsFromDeck('safe-for-work');
       totalCards.push(...SFWCards);
     }
-
-
-
 
     const blackCards = shuffle(totalCards.filter(({ type }) => type === 'black').map(({ text }) => text));
     const whiteCards = shuffle(totalCards.filter(({ type }) => type === 'white').map(({ text }) => text));
