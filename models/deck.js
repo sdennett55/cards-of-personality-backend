@@ -2,8 +2,8 @@ const mongoose = require('mongoose');
 
 // Schema
 const deckSchema = new mongoose.Schema({
-  name: String,
-  isPublic: Boolean,
+  name: {type: String, required: true},
+  isPublic: {type: Boolean, default: false},
   hasSFWCards: { 
     type: Boolean, 
     default: false 

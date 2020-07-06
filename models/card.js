@@ -3,11 +3,12 @@ const { Deck } = require('./deck');
 
 // Schema
 const cardSchema = new mongoose.Schema({
-  type: String,
-  text: String,
+  type: {type: String, required: true},
+  text: {type: String, required: true},
   deck: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Deck',
+    required: true,
   },
 });
 // Card Class

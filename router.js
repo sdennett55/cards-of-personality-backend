@@ -62,20 +62,27 @@ router.post("/api/addCard", async function (req, res) {
     );
   }
 
-  // Don't allow folks to try to hit this endpoint and update these two decks
-  // Requires a secret key 
-  if ((deck === 'safe-for-work' || deck === 'not-safe-for-work') && secret !== process.env.LOCKED_DECK_SECRET) {
-    return res.send(
-      `Error: You do not have permissions to add a ${type} card to this deck.`
-    );
-  }
-
+  
   // check if card already exists in the deck
   try {
     let totalCards = [];
-
+    
     const cardsFromDeck = await getCardsFromDeck(deck);
-    const { hasSFWCards, hasNSFWCards } = await getDeck(deck);
+
+    
+    const theDeck = await getDeck(deck);
+
+    console.log('wtfwtf', theDeck);
+
+    // Don't allow folks to try to hit this endpoint and update these two decks
+    // Requires a secret key 
+    if (secret !== theDeck._id + '') {
+      return res.send(
+        `Error: You do not have permissions to add a ${type} card to this deck.`
+      );
+    }
+    
+    const { hasSFWCards, hasNSFWCards } = theDeck
     totalCards.push(...cardsFromDeck);
 
     if (hasSFWCards || hasNSFWCards) {
@@ -118,8 +125,30 @@ router.post("/api/createDeck", async function (req, res) {
   }
 
   try {
-    await createDeck({ name: deckName, isPublic: !isPrivate, hasSFWCards, hasNSFWCards });
-    return res.send("Success!");
+    const newDeck = await createDeck({ name: deckName, isPublic: !isPrivate, hasSFWCards, hasNSFWCards });
+    return res.send(newDeck._id);
+  } catch (err) {
+    return res.status(500).send("Error: There was an issue saving this deck to the database...", err.message);
+  }
+});
+
+router.post("/api/getDeckSecret", async function (req, res) {
+  const { secret, deckName } = req.body;
+
+  if (!secret) {
+    return res.status(500).send("Error: You don't have permissions to edit this deck.");
+  }
+
+  try {
+    const deckExists = await getDeck(deckName);
+    if (!deckExists) {
+      return res.status(500).send("Error: This deck doesn't exist.");
+    }
+    if (deckExists._id + '' === secret) {
+      return res.send("Success!");
+    } else {
+      return res.status(500).send("Error: You don't have permissions to edit this deck.");
+    }
   } catch (err) {
     return res.status(500).send("Error: There was an issue saving this deck to the database...", err.message);
   }
