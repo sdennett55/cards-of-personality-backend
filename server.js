@@ -266,22 +266,13 @@ io.on("connection", function (socket) {
   });
 
   socket.on("draw seven white cards", function({sevenWhiteCards, socketId, newWhiteCards}) {
-    // modify the seven white cards so that they have the right shape
-    const modifiedSevenWhiteCards = sevenWhiteCards.map((text, index) => ({
-      bgColor: '#fff',
-      color: '#000',
-      id: index,
-      isFlipped: false,
-      text,
-      type: "whiteCard",
-    }));
     // add seven white cards to a users deck once they submit a name
     const playerThatJoined = rooms[socket.roomId].players.find(player => player.id === socketId);
-    playerThatJoined.whiteCards = modifiedSevenWhiteCards;
+    playerThatJoined.whiteCards = sevenWhiteCards;
     // update whiteCards on server
     rooms[socket.roomId].whiteCards = newWhiteCards;
     // emit update back to clients
-    io.to(socket.roomId).emit("draw seven white cards update", {players: rooms[socket.roomId].players, whiteCards: rooms[socket.roomId].whiteCards, sevenWhiteCards: modifiedSevenWhiteCards});
+    io.to(socket.roomId).emit("draw seven white cards update", {players: rooms[socket.roomId].players, whiteCards: rooms[socket.roomId].whiteCards, sevenWhiteCards});
   });
 
   socket.on("sent message to chat", function ({ msg, from }) {
