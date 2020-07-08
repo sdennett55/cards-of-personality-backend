@@ -1,5 +1,5 @@
 require("dotenv").config({ path: __dirname + "/.env" });
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const cors = require("cors");
 var app = require("express")();
 const bodyParser = require("body-parser");
@@ -9,9 +9,13 @@ var io = require("socket.io")(http);
 const router = require("./router");
 const { shuffle, Game } = require("./helpers.js");
 
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log('Connected to MongoDB...'))
-  .catch(err => console.error('Failed to connect to MongoDB...', err));
+mongoose
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log("Connected to MongoDB..."))
+  .catch((err) => console.error("Failed to connect to MongoDB...", err));
 
 var rooms = {};
 
@@ -262,29 +266,34 @@ io.on("connection", function (socket) {
     } else {
       rooms[socket.roomId].players = newPlayers;
       io.to(socket.roomId).emit("update players", rooms[socket.roomId].players);
+
+      // grab (and remove) seven white cards when showNamePopup goes away
+      const sevenWhiteCards = rooms[socket.roomId].whiteCards.splice(0, 7);
+
+      // modify the seven white cards so that they have the right shape
+      const modifiedSevenWhiteCards = sevenWhiteCards.map((text, index) => ({
+        bgColor: "#fff",
+        color: "#000",
+        id: index,
+        isFlipped: false,
+        text,
+        type: "whiteCard",
+      }));
+
+      // add seven white cards to a users deck once they submit a name
+      const playerThatJoined = rooms[socket.roomId].players.find(
+        (player) => player.id === id
+      );
+      playerThatJoined.whiteCards = modifiedSevenWhiteCards;
+
+      // emit update back to clients
+      io.to(socket.roomId).emit("draw seven white cards update", {
+        players: rooms[socket.roomId].players,
+        whiteCards: rooms[socket.roomId].whiteCards,
+        sevenWhiteCards: modifiedSevenWhiteCards,
+        socketId: id,
+      });
     }
-  });
-
-  socket.on("draw seven white cards", function({socketId}) {
-    // grab (and remove) seven white cards when showNamePopup goes away
-    const sevenWhiteCards = rooms[socket.roomId].whiteCards.splice(0, 7);
-
-    // modify the seven white cards so that they have the right shape
-    const modifiedSevenWhiteCards = sevenWhiteCards.map((text, index) => ({
-      bgColor: '#fff',
-      color: '#000',
-      id: index,
-      isFlipped: false,
-      text,
-      type: "whiteCard",
-    }));
-
-    // add seven white cards to a users deck once they submit a name
-    const playerThatJoined = rooms[socket.roomId].players.find(player => player.id === socketId);
-    playerThatJoined.whiteCards = modifiedSevenWhiteCards;
-
-    // emit update back to clients
-    io.to(socket.roomId).emit("draw seven white cards update", {players: rooms[socket.roomId].players, whiteCards: rooms[socket.roomId].whiteCards, sevenWhiteCards: modifiedSevenWhiteCards, socketId});
   });
 
   socket.on("sent message to chat", function ({ msg, from }) {
