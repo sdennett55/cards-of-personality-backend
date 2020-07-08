@@ -1,7 +1,7 @@
 const express = require("express");
 const server = require("./server");
 const { shuffle } = require("./helpers.js");
-const { getPublicDecks, createDeck, getDeck } = require('./models/deck');
+const { getPublicDecks, getDeck, createDeck } = require('./models/deck');
 const { getCardsFromDeck, addCard } = require('./models/card');
 
 const router = express.Router();
@@ -20,6 +20,21 @@ router.get("/api/getPublicDecks", async function (req, res) {
     return res.send(allPublicDecks);
   } catch (err) {
     return res.status(500).send('Error: There was an issue retrieving public decks...', err.message);
+  }
+});
+
+router.post("/api/getDeck", async function (req, res) {
+  const deckName = req.body.deck;
+  try {
+    const deckExists = await getDeck(deckName);
+    console.log({deckExists});
+    if (deckExists) {
+      return res.send('Deck exists!');
+    } else {
+      return res.status(500).send('Error: This deck doesn\'t exist...');
+    }
+  } catch (err) {
+    return res.status(500).send('Error: There was an issue retrieving this deck...', err.message);
   }
 });
 
@@ -62,26 +77,26 @@ router.post("/api/addCard", async function (req, res) {
     );
   }
 
-  
+
   // check if card already exists in the deck
   try {
     let totalCards = [];
-    
+
     const cardsFromDeck = await getCardsFromDeck(deck);
 
-    
+
     const theDeck = await getDeck(deck);
 
     console.log('wtfwtf', theDeck);
 
     // Don't allow folks to try to hit this endpoint and update these two decks
-    // Requires a secret key 
+    // Requires a secret key
     if (secret !== theDeck._id + '') {
       return res.send(
         `Error: You do not have permissions to add a ${type} card to this deck.`
       );
     }
-    
+
     const { hasSFWCards, hasNSFWCards } = theDeck
     totalCards.push(...cardsFromDeck);
 

@@ -4,13 +4,13 @@ const mongoose = require('mongoose');
 const deckSchema = new mongoose.Schema({
   name: {type: String, required: true},
   isPublic: {type: Boolean, default: false},
-  hasSFWCards: { 
-    type: Boolean, 
-    default: false 
+  hasSFWCards: {
+    type: Boolean,
+    default: false
   },
-  hasNSFWCards: { 
-    type: Boolean, 
-    default: false 
+  hasNSFWCards: {
+    type: Boolean,
+    default: false
   },
 });
 // Deck Class
