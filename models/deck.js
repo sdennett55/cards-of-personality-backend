@@ -13,6 +13,7 @@ const deckSchema = new mongoose.Schema({
     default: false,
   },
   approved: Boolean,
+  isNSFW: Boolean,
 });
 // Deck Class
 const Deck = mongoose.model('Deck', deckSchema);
