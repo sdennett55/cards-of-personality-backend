@@ -6,18 +6,19 @@ const deckSchema = new mongoose.Schema({
   isPublic: {type: Boolean, default: false},
   hasSFWCards: {
     type: Boolean,
-    default: false
+    default: false,
   },
   hasNSFWCards: {
     type: Boolean,
-    default: false
+    default: false,
   },
+  approved: Boolean,
 });
 // Deck Class
 const Deck = mongoose.model('Deck', deckSchema);
 
 // Create a new Deck
-async function createDeck({ name, isPublic, hasSFWCards, hasNSFWCards }) {
+async function createDeck({name, isPublic, hasSFWCards, hasNSFWCards}) {
   // Instance of Deck class
   const deck = new Deck({
     name,
@@ -39,12 +40,15 @@ async function createDeck({ name, isPublic, hasSFWCards, hasNSFWCards }) {
 //   isPublic: true,
 // })
 
-async function getPublicDecks() {
+async function getPublicDecks(opts = {}) {
   try {
-    const publicDecks = await Deck.find({ isPublic: true, });
+    const publicDecks = await Deck.find({isPublic: true, ...opts});
     return publicDecks;
   } catch (err) {
-    console.error('There was an issue trying to access public decks: ', err.message);
+    console.error(
+      'There was an issue trying to access public decks: ',
+      err.message
+    );
   }
 }
 
@@ -53,7 +57,10 @@ async function getDeck(deckName) {
     const deck = await Deck.findOne({name: deckName});
     return deck;
   } catch (err) {
-    console.error('There was an issue trying to access this deck: ', err.message);
+    console.error(
+      'There was an issue trying to access this deck: ',
+      err.message
+    );
   }
 }
 

@@ -1,29 +1,48 @@
-const express = require("express");
-const server = require("./server");
-const { shuffle } = require("./helpers.js");
-const { getPublicDecks, getDeck, createDeck } = require('./models/deck');
-const { getCardsFromDeck, addCard } = require('./models/card');
+const express = require('express');
+const server = require('./server');
+const {shuffle} = require('./helpers.js');
+const {getPublicDecks, getDeck, createDeck} = require('./models/deck');
+const {getCardsFromDeck, addCard} = require('./models/card');
 
 const router = express.Router();
 
-router.post("/api/checkAvailableRooms", function (req, res) {
+router.post('/api/checkAvailableRooms', function (req, res) {
   if (Object.keys(server.rooms).includes(req.body.roomName)) {
-    return res.send("game exists");
+    return res.send('game exists');
   }
 
   return res.end();
 });
 
-router.get("/api/getPublicDecks", async function (req, res) {
+router.get('/api/getPublicDecks', async function (req, res) {
   try {
     const allPublicDecks = await getPublicDecks();
     return res.send(allPublicDecks);
   } catch (err) {
-    return res.status(500).send('Error: There was an issue retrieving public decks...', err.message);
+    return res
+      .status(500)
+      .send(
+        'Error: There was an issue retrieving public decks...',
+        err.message
+      );
   }
 });
 
-router.post("/api/getDeck", async function (req, res) {
+router.get('/api/getApprovedPublicDecks', async function (req, res) {
+  try {
+    const allApprovedPublicDecks = await getPublicDecks({approved: true});
+    return res.send(allApprovedPublicDecks);
+  } catch (err) {
+    return res
+      .status(500)
+      .send(
+        'Error: There was an issue retrieving public decks...',
+        err.message
+      );
+  }
+});
+
+router.post('/api/getDeck', async function (req, res) {
   const deckName = req.body.deck;
   try {
     const deckExists = await getDeck(deckName);
@@ -31,23 +50,25 @@ router.post("/api/getDeck", async function (req, res) {
     if (deckExists) {
       return res.send('Deck exists!');
     } else {
-      return res.status(500).send('Error: This deck doesn\'t exist...');
+      return res.status(500).send("Error: This deck doesn't exist...");
     }
   } catch (err) {
-    return res.status(500).send('Error: There was an issue retrieving this deck...', err.message);
+    return res
+      .status(500)
+      .send('Error: There was an issue retrieving this deck...', err.message);
   }
 });
 
-router.get("/api/getCardsFromDeck/:name", async function (req, res) {
+router.get('/api/getCardsFromDeck/:name', async function (req, res) {
   const deckName = req.params.name;
 
   let totalCards = [];
 
   try {
     const deckExists = await getDeck(deckName);
-    const { hasSFWCards, hasNSFWCards } = deckExists;
+    const {hasSFWCards, hasNSFWCards} = deckExists;
     if (!deckExists) {
-      return res.send("no result");
+      return res.send('no result');
     }
 
     if (hasSFWCards || hasNSFWCards) {
@@ -63,27 +84,29 @@ router.get("/api/getCardsFromDeck/:name", async function (req, res) {
     totalCards.push(...cardsFromDeck);
     return res.send(totalCards);
   } catch (err) {
-    return res.status(500).send('Error: There was an issue retrieving cards from the deck...', err.message);
+    return res
+      .status(500)
+      .send(
+        'Error: There was an issue retrieving cards from the deck...',
+        err.message
+      );
   }
-
 });
 
-router.post("/api/addCard", async function (req, res) {
-  const { deckName: deck, text, type, secret } = req.body;
+router.post('/api/addCard', async function (req, res) {
+  const {deckName: deck, text, type, secret} = req.body;
 
-  if (!text.replace(/\s/g, "")) {
+  if (!text.replace(/\s/g, '')) {
     return res.send(
       `Error: Please submit more than 0 characters for the ${type} card.`
     );
   }
-
 
   // check if card already exists in the deck
   try {
     let totalCards = [];
 
     const cardsFromDeck = await getCardsFromDeck(deck);
-
 
     const theDeck = await getDeck(deck);
 
@@ -97,7 +120,7 @@ router.post("/api/addCard", async function (req, res) {
       );
     }
 
-    const { hasSFWCards, hasNSFWCards } = theDeck
+    const {hasSFWCards, hasNSFWCards} = theDeck;
     totalCards.push(...cardsFromDeck);
 
     if (hasSFWCards || hasNSFWCards) {
@@ -109,49 +132,68 @@ router.post("/api/addCard", async function (req, res) {
       totalCards.push(...NSFWCards);
     }
 
-    const cardExists = totalCards.find(({ text: newText, type: newType }) => {
-      return type === newType && text === newText
+    const cardExists = totalCards.find(({text: newText, type: newType}) => {
+      return type === newType && text === newText;
     });
 
     if (cardExists) {
-      return res.send(
-        `Error: This ${type} card already exists in the deck.`
-      );
+      return res.send(`Error: This ${type} card already exists in the deck.`);
     }
   } catch (err) {
-    return res.status(500).send('Error: There was an issue retrieving cards from the deck when adding a new card...', err.message);
+    return res
+      .status(500)
+      .send(
+        'Error: There was an issue retrieving cards from the deck when adding a new card...',
+        err.message
+      );
   }
 
-
   try {
-    await addCard({ type, text, deck });
+    await addCard({type, text, deck});
     return res.send('Success!');
   } catch (err) {
-    return res.status(500).send('Error: There was an issue retrieving cards from the deck...', err.message);
+    return res
+      .status(500)
+      .send(
+        'Error: There was an issue retrieving cards from the deck...',
+        err.message
+      );
   }
 });
 
-router.post("/api/createDeck", async function (req, res) {
-  const { deckName, isPrivate, hasSFWCards, hasNSFWCards } = req.body;
+router.post('/api/createDeck', async function (req, res) {
+  const {deckName, isPrivate, hasSFWCards, hasNSFWCards} = req.body;
 
   const deckExists = await getDeck(deckName);
   if (deckExists) {
-    return res.send("Error: This deck already exists.");
+    return res.send('Error: This deck already exists.');
   }
 
   try {
-    const newDeck = await createDeck({ name: deckName, isPublic: !isPrivate, hasSFWCards, hasNSFWCards });
+    const newDeck = await createDeck({
+      name: deckName,
+      isPublic: !isPrivate,
+      hasSFWCards,
+      hasNSFWCards,
+    });
     return res.send(newDeck._id);
   } catch (err) {
-    return res.status(500).send("Error: There was an issue saving this deck to the database...", err.message);
+    return res
+      .status(500)
+      .send(
+        'Error: There was an issue saving this deck to the database...',
+        err.message
+      );
   }
 });
 
-router.post("/api/getDeckSecret", async function (req, res) {
-  const { secret, deckName } = req.body;
+router.post('/api/getDeckSecret', async function (req, res) {
+  const {secret, deckName} = req.body;
 
   if (!secret) {
-    return res.status(500).send("Error: You don't have permissions to edit this deck.");
+    return res
+      .status(500)
+      .send("Error: You don't have permissions to edit this deck.");
   }
 
   try {
@@ -160,23 +202,30 @@ router.post("/api/getDeckSecret", async function (req, res) {
       return res.status(500).send("Error: This deck doesn't exist.");
     }
     if (deckExists._id + '' === secret) {
-      return res.send("Success!");
+      return res.send('Success!');
     } else {
-      return res.status(500).send("Error: You don't have permissions to edit this deck.");
+      return res
+        .status(500)
+        .send("Error: You don't have permissions to edit this deck.");
     }
   } catch (err) {
-    return res.status(500).send("Error: There was an issue saving this deck to the database...", err.message);
+    return res
+      .status(500)
+      .send(
+        'Error: There was an issue saving this deck to the database...',
+        err.message
+      );
   }
 });
 
-router.post("/api/getInitialCards", async function (req, res) {
-  const { deckName, roomId } = req.body;
+router.post('/api/getInitialCards', async function (req, res) {
+  const {deckName, roomId} = req.body;
 
   // the first client that connects and hits this route, sets the cards for the game
   // if cards are already set, send back an empty response
   console.log(
-    "hitting getInitialCards route",
-    server.rooms[roomId] ? server.rooms[roomId].blackCards.length : "blah"
+    'hitting getInitialCards route',
+    server.rooms[roomId] ? server.rooms[roomId].blackCards.length : 'blah'
   );
   if (server.rooms[roomId]) {
     if (server.rooms[roomId].initialCardsAreSet) {
@@ -184,14 +233,14 @@ router.post("/api/getInitialCards", async function (req, res) {
     }
 
     server.rooms[roomId].initialCardsAreSet = true;
-    console.log("initial cards are set!");
+    console.log('initial cards are set!');
   }
 
   try {
     let totalCards = [];
 
     if (deckName) {
-      const { hasSFWCards, hasNSFWCards } = await getDeck(deckName);
+      const {hasSFWCards, hasNSFWCards} = await getDeck(deckName);
       const cardsFromDeck = await getCardsFromDeck(deckName);
       totalCards.push(...cardsFromDeck);
 
@@ -209,24 +258,31 @@ router.post("/api/getInitialCards", async function (req, res) {
       totalCards.push(...SFWCards);
     }
 
-    const blackCards = shuffle(totalCards.filter(({ type }) => type === 'black').map(({ text }) => text));
-    const whiteCards = shuffle(totalCards.filter(({ type }) => type === 'white').map(({ text }) => text));
+    const blackCards = shuffle(
+      totalCards.filter(({type}) => type === 'black').map(({text}) => text)
+    );
+    const whiteCards = shuffle(
+      totalCards.filter(({type}) => type === 'white').map(({text}) => text)
+    );
 
     // just send back array of text for each
     // shuffle them first
-    return res.send({ blackCards, whiteCards });
+    return res.send({blackCards, whiteCards});
   } catch (err) {
-    return res.status(500).send('Error: There was an issue retrieving initial cards from this deck...', err.message);
+    return res
+      .status(500)
+      .send(
+        'Error: There was an issue retrieving initial cards from this deck...',
+        err.message
+      );
   }
-
-
 });
 
-router.get("/api/getActiveRooms", function (req, res) {
+router.get('/api/getActiveRooms', function (req, res) {
   // send back list of active rooms on the server
   const roomsWithoutCircularRefs = Object.entries(server.rooms).reduce(
     (newObj, [roomName, room]) => {
-      const { timer, ...rest } = room;
+      const {timer, ...rest} = room;
       newObj[roomName] = rest;
       return newObj;
     },
@@ -235,12 +291,12 @@ router.get("/api/getActiveRooms", function (req, res) {
   return res.send(roomsWithoutCircularRefs);
 });
 
-router.get("/api/getPublicRooms", function (req, res) {
+router.get('/api/getPublicRooms', function (req, res) {
   // send back list of active rooms on the server
   const roomsWithoutCircularRefs = Object.entries(server.rooms).reduce(
     (newObj, [roomName, room]) => {
       if (!room.isPrivate && room.players.length < 8) {
-        const { timer, ...rest } = room;
+        const {timer, ...rest} = room;
         newObj[roomName] = rest;
       }
       return newObj;
@@ -250,8 +306,8 @@ router.get("/api/getPublicRooms", function (req, res) {
   return res.send(roomsWithoutCircularRefs);
 });
 
-router.get("/api/getPlayerInfo", function (req, res) {
-  const { id, roomName } = req.query;
+router.get('/api/getPlayerInfo', function (req, res) {
+  const {id, roomName} = req.query;
   try {
     const playerInfo = server.rooms[roomName].players.find(
       (player) => player.id === id
