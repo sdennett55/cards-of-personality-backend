@@ -25,8 +25,8 @@ app.use('/', router);
 const MAX_PLAYERS = 8;
 
 // when a user hits the /game path, start the websocket connection
-io.on('connection', function (socket) {
-  socket.on('join room', function (roomId) {
+io.on("connection", function (socket) {
+  socket.on("join room", function ({roomId, myName}) {
     // If there's more than MAX_PLAYERS, then just disconnect any others
     // just kidding, this causes an infinite loops since we refresh the page when someone disconnects
     // this may not be necessary to handle?
@@ -55,7 +55,7 @@ io.on('connection', function (socket) {
     });
 
     if (rooms[socket.roomId].players.length < MAX_PLAYERS) {
-      rooms[socket.roomId].players.push({id: socket.id, name: 'NEW USER'});
+      rooms[socket.roomId].players.push({ id: socket.id, name: myName || "NEW USER" });
     }
 
     io.to(socket.roomId).emit('new connection', {
