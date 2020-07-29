@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
-    "start:dev": "nodemon server.js"
+    "start:dev": "npm run tsc && nodemon server.js",
+    "tsc": "tsc"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +21,7 @@
     "socket.io": "^2.3.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.3"
+    "nodemon": "^2.0.3",
+    "typescript": "^3.9.7"
   }
 }

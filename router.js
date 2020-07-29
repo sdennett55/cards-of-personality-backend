@@ -3,6 +3,10 @@ const server = require('./server');
 const {shuffle} = require('./helpers.js');
 const {getPublicDecks, getDeck, createDeck} = require('./models/deck');
 const {getCardsFromDeck, addCard} = require('./models/card');
+const {DeckCache} = require('./cache');
+
+// Initialize cache
+const cache = new DeckCache();
 
 const router = express.Router();
 
@@ -239,24 +243,44 @@ router.post('/api/getInitialCards', async function (req, res) {
   try {
     let totalCards = [];
 
-    if (deckName) {
-      const {hasSFWCards, hasNSFWCards} = await getDeck(deckName);
-      const cardsFromDeck = await getCardsFromDeck(deckName);
-      totalCards.push(...cardsFromDeck);
+    // If the SFW or NSFW default decks exist in the in-memory cache, get them from there!
+    if ((deckName === 'safe-for-work' || deckName === 'not-safe-for-work') && cache.get(deckName)) {
+      const cardsFromCache = JSON.parse(cache.get(deckName));
+      totalCards.push(...cardsFromCache);
+      console.log(`Loaded the ${deckName} deck from cache!`);
+    } else {
+      // Otherwise, grab custom decks from MongoDB
+      if (deckName) {
+        const {hasSFWCards, hasNSFWCards} = await getDeck(deckName);
+        const cardsFromDeck = await getCardsFromDeck(deckName);
+        totalCards.push(...cardsFromDeck);
 
-      if (hasSFWCards || hasNSFWCards) {
-        const SFWCards = await getCardsFromDeck('safe-for-work');
+        if (hasSFWCards || hasNSFWCards) {
+
+          const SFWCards = cache.get('safe-for-work') || await getCardsFromDeck('safe-for-work');
+          totalCards.push(...SFWCards);
+        }
+        if (hasNSFWCards) {
+          const NSFWCards = cache.get('not-safe-for-work') || await getCardsFromDeck('not-safe-for-work');
+          totalCards.push(...NSFWCards);
+        }
+      } else {
+        // if there's no deck query param, load SFW deck by default
+        const SFWCards = cache.get('safe-for-work') || await getCardsFromDeck('safe-for-work');
         totalCards.push(...SFWCards);
       }
-      if (hasNSFWCards) {
-        const NSFWCards = await getCardsFromDeck('not-safe-for-work');
-        totalCards.push(...NSFWCards);
+
+      // Only add SFW or NSFW deck to cache for now
+      if (deckName === 'safe-for-work' || deckName === 'not-safe-for-work') {
+        cache.set({
+          key: deckName,
+          data: JSON.stringify(totalCards),
+          ttl: 86400,
+        });
+        console.log(`Added ${deckName} deck to cache!`);
       }
-    } else {
-      // if there's no deck query param, load SFW deck by default
-      const SFWCards = await getCardsFromDeck('safe-for-work');
-      totalCards.push(...SFWCards);
     }
+
 
     const blackCards = shuffle(
       totalCards.filter(({type}) => type === 'black').map(({text}) => text)
