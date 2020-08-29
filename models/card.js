@@ -43,7 +43,7 @@ async function deleteCard({ type, text, deck }) {
 
     if (!doesDeckHaveThisCard) {
       const blackList = getDeck && getDeck.blackList ? getDeck.blackList : null;
-      const newBlackList = blackList ? [...blackList, getCard._id] : [getCard._id];
+      const newBlackList = blackList ? [...blackList, String(getCard._id)] : [String(getCard._id)];
       await Deck.updateOne({ name: deck }, { blackList: newBlackList })
 
       console.log(`Added the ${type} card of text "${text}" to the ${deck} deck's blackList`);
