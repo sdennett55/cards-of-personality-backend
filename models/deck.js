@@ -2,8 +2,8 @@ const mongoose = require('mongoose');
 
 // Schema
 const deckSchema = new mongoose.Schema({
-  name: {type: String, required: true},
-  isPublic: {type: Boolean, default: false},
+  name: { type: String, required: true },
+  isPublic: { type: Boolean, default: false },
   hasSFWCards: {
     type: Boolean,
     default: false,
@@ -12,6 +12,10 @@ const deckSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  blackList: {
+    type: Array,
+    required: false
+  },
   approved: Boolean,
   isNSFW: Boolean,
 });
@@ -19,7 +23,7 @@ const deckSchema = new mongoose.Schema({
 const Deck = mongoose.model('Deck', deckSchema);
 
 // Create a new Deck
-async function createDeck({name, isPublic, hasSFWCards, hasNSFWCards}) {
+async function createDeck({ name, isPublic, hasSFWCards, hasNSFWCards }) {
   // Instance of Deck class
   const deck = new Deck({
     name,
@@ -36,14 +40,9 @@ async function createDeck({name, isPublic, hasSFWCards, hasNSFWCards}) {
   }
 }
 
-// const saveDeck = createDeck({
-//   name: 'not-safe-for-work',
-//   isPublic: true,
-// })
-
 async function getPublicDecks(opts = {}) {
   try {
-    const publicDecks = await Deck.find({isPublic: true, ...opts});
+    const publicDecks = await Deck.find({ isPublic: true, ...opts });
     return publicDecks;
   } catch (err) {
     console.error(
@@ -55,7 +54,7 @@ async function getPublicDecks(opts = {}) {
 
 async function getDeck(deckName) {
   try {
-    const deck = await Deck.findOne({name: deckName});
+    const deck = await Deck.findOne({ name: deckName });
     return deck;
   } catch (err) {
     console.error(

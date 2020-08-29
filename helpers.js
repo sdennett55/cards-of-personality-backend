@@ -19,6 +19,18 @@ function shuffle(array) {
   return array;
 }
 
+function blackListFilter({ deck, cards }) {
+  // If the deck doesn't have a black list, exit early.
+  if (!deck.blackList || (deck.blackList && deck.blackList.length < 1)) {
+    return cards;
+  }
+
+  const blackListIDs = deck.blackList;
+
+  // loop through every card and return true if it's not in the black list
+  return [...cards].filter(({ _id }) => !blackListIDs.includes(_id))
+}
+
 // Game class for each room
 function Game() {
   this.players = [];
@@ -31,4 +43,4 @@ function Game() {
   this.isPrivate = false;
 }
 
-module.exports = {shuffle, Game};
+module.exports = { shuffle, blackListFilter, Game };
