@@ -1,4 +1,4 @@
-require('dotenv').config({path: __dirname + '/.env'});
+require('dotenv').config({ path: __dirname + '/.env' });
 const mongoose = require('mongoose');
 const cors = require('cors');
 var app = require('express')();
@@ -7,7 +7,7 @@ app.use(cors());
 var http = require('http').createServer(app);
 var io = require('socket.io')(http);
 const router = require('./router');
-const {shuffle, Game} = require('./helpers.js');
+const { shuffle, Game } = require('./helpers.js');
 
 mongoose
   .connect(process.env.MONGO_URI, {
@@ -19,14 +19,17 @@ mongoose
 
 var rooms = {};
 
+app.set('trust proxy', 1);
 app.use(bodyParser.json());
+// Test the IP
+app.get('/ipCheckADoodleSleeve', (request, response) => response.send(request.ip));
 app.use('/', router);
 
 const MAX_PLAYERS = 8;
 
 // when a user hits the /game path, start the websocket connection
-io.on("connection", function (socket) {
-  socket.on("join room", function ({roomId, myName}) {
+io.on('connection', function (socket) {
+  socket.on('join room', function ({ roomId, myName }) {
     // If there's more than MAX_PLAYERS, then just disconnect any others
     // just kidding, this causes an infinite loops since we refresh the page when someone disconnects
     // this may not be necessary to handle?
@@ -55,7 +58,7 @@ io.on("connection", function (socket) {
     });
 
     if (rooms[socket.roomId].players.length < MAX_PLAYERS) {
-      rooms[socket.roomId].players.push({ id: socket.id, name: myName || "NEW USER" });
+      rooms[socket.roomId].players.push({ id: socket.id, name: myName || 'NEW USER' });
     }
 
     io.to(socket.roomId).emit('new connection', {
@@ -76,10 +79,7 @@ io.on("connection", function (socket) {
   });
 
   // first player to join game hits the getInitialCards endpoint and sets the initial cards for the game
-  socket.on('set initialCards for game', function ({
-    whiteCards: newWhiteCards,
-    blackCards: newBlackCards,
-  }) {
+  socket.on('set initialCards for game', function ({ whiteCards: newWhiteCards, blackCards: newBlackCards }) {
     rooms[socket.roomId].whiteCards = newWhiteCards;
     rooms[socket.roomId].blackCards = newBlackCards;
 
@@ -90,10 +90,7 @@ io.on("connection", function (socket) {
   });
 
   // update the whiteCards on the server
-  socket.on('update whiteCards', function ({
-    whiteCards: newWhiteCards,
-    players: newPlayers,
-  }) {
+  socket.on('update whiteCards', function ({ whiteCards: newWhiteCards, players: newPlayers }) {
     rooms[socket.roomId].whiteCards = newWhiteCards;
     rooms[socket.roomId].players = newPlayers;
     io.to(socket.roomId).emit('update players', rooms[socket.roomId].players);
@@ -102,62 +99,36 @@ io.on("connection", function (socket) {
   // update the submittedCards when someone discards a card
   socket.on('update submittedCards', function (passedInCard) {
     // remove passedInCard from submittedCards
-    const passedInCardIndex = rooms[socket.roomId].submittedCards.findIndex(
-      (card) => card.text === passedInCard.text
-    );
+    const passedInCardIndex = rooms[socket.roomId].submittedCards.findIndex((card) => card.text === passedInCard.text);
     rooms[socket.roomId].submittedCards.splice(passedInCardIndex, 1);
 
     // let EVERYONE know including the client that triggered this
-    io.to(socket.roomId).emit(
-      'update submittedCards',
-      rooms[socket.roomId].submittedCards
-    );
+    io.to(socket.roomId).emit('update submittedCards', rooms[socket.roomId].submittedCards);
   });
 
   // update the whiteCards on the server
-  socket.on('submitted a card', function ({
-    socketId,
-    passedInCard,
-    newMyCards,
-  }) {
+  socket.on('submitted a card', function ({ socketId, passedInCard, newMyCards }) {
     // 2020-06-30T14:08:31.086551+00:00 app[web.1]: /app/server.js:109
     // 2020-06-30T14:08:31.086569+00:00 app[web.1]:     rooms[socket.roomId].submittedCards.push(passedInCard);
     // 2020-06-30T14:08:31.086570+00:00 app[web.1]:                          ^
     // 2020-06-30T14:08:31.086571+00:00 app[web.1]:
     // 2020-06-30T14:08:31.086571+00:00 app[web.1]: TypeError: Cannot read property 'submittedCards' of undefined
     if (!rooms[socket.roomId]) {
-      console.log(
-        'Warning: rooms[socket.roomId] is undefined. ',
-        `socket.roomId: ${socket.roomId}`,
-        `typeof socket.roomId ${typeof socket.roomId}`,
-        'rooms: ',
-        Object.keys(rooms)
-      );
+      console.log('Warning: rooms[socket.roomId] is undefined. ', `socket.roomId: ${socket.roomId}`, `typeof socket.roomId ${typeof socket.roomId}`, 'rooms: ', Object.keys(rooms));
     }
     rooms[socket.roomId].submittedCards.push(passedInCard);
 
     // randomize the submittedCards when a new one is submitted
-    rooms[socket.roomId].submittedCards = shuffle(
-      rooms[socket.roomId].submittedCards
-    );
+    rooms[socket.roomId].submittedCards = shuffle(rooms[socket.roomId].submittedCards);
 
     // find current player from players and update whiteCards property to be newMyCards
-    const playerIndex = rooms[socket.roomId].players.findIndex(
-      (player) => player.id === socketId
-    );
+    const playerIndex = rooms[socket.roomId].players.findIndex((player) => player.id === socketId);
 
     // prevent user error: TypeError: Cannot set property 'whiteCards' of undefined
     if (rooms[socket.roomId].players[playerIndex]) {
       rooms[socket.roomId].players[playerIndex].whiteCards = newMyCards;
     } else {
-      console.log(
-        "Warning: Player that submitted card doesn't exist. players: ",
-        rooms[socket.roomId].players,
-        'socketId: ',
-        socketId,
-        ' index: ',
-        playerIndex
-      );
+      console.log("Warning: Player that submitted card doesn't exist. players: ", rooms[socket.roomId].players, 'socketId: ', socketId, ' index: ', playerIndex);
     }
 
     // let EVERYONE know including the client that triggered this
@@ -174,19 +145,14 @@ io.on("connection", function (socket) {
   });
 
   // when someone drops a white card into their deck
-  socket.on('dropped in my cards', function ({passedInCard, socketId}) {
-    const indexOfPassedInCard = rooms[socket.roomId].whiteCards.findIndex(
-      (whiteCard) => whiteCard === passedInCard.text
-    );
+  socket.on('dropped in my cards', function ({ passedInCard, socketId }) {
+    const indexOfPassedInCard = rooms[socket.roomId].whiteCards.findIndex((whiteCard) => whiteCard === passedInCard.text);
     rooms[socket.roomId].whiteCards.splice(indexOfPassedInCard, 1);
 
     // update player whiteCards property
     const newPlayers = rooms[socket.roomId].players.map((player) => {
       if (player.id === socketId) {
-        player.whiteCards = [
-          ...(player.whiteCards ? player.whiteCards : []),
-          passedInCard,
-        ];
+        player.whiteCards = [...(player.whiteCards ? player.whiteCards : []), passedInCard];
       }
       return player;
     });
@@ -199,13 +165,10 @@ io.on("connection", function (socket) {
   });
 
   // when someone drops a black card into a player drop
-  socket.on('dropped in player drop', function ({
-    players: newPlayers,
-    blackCards: newBlackCards,
-  }) {
+  socket.on('dropped in player drop', function ({ players: newPlayers, blackCards: newBlackCards }) {
     rooms[socket.roomId].players = newPlayers;
     rooms[socket.roomId].blackCards = newBlackCards;
-    console.log({blackCards: rooms[socket.roomId].blackCards.length});
+    console.log({ blackCards: rooms[socket.roomId].blackCards.length });
     this.broadcast.to(socket.roomId).emit('dropped in player drop', {
       players: rooms[socket.roomId].players,
       blackCards: rooms[socket.roomId].blackCards,
@@ -213,49 +176,40 @@ io.on("connection", function (socket) {
   });
 
   // get the mouse coordinates from the client
-  socket.on('dragged card', function ({type, text, x, y}) {
+  socket.on('dragged card', function ({ type, text, x, y }) {
     // send the coordinates to everyone but client that sent it
-    this.broadcast.to(socket.roomId).emit('dragged card', {type, text, x, y});
+    this.broadcast.to(socket.roomId).emit('dragged card', { type, text, x, y });
   });
 
   // get the mouse coordinates from the client
-  socket.on('let go card', function ({type, text}) {
+  socket.on('let go card', function ({ type, text }) {
     // send the coordinates to everyone but client that sent it
-    this.broadcast.to(socket.roomId).emit('let go card', {type, text});
+    this.broadcast.to(socket.roomId).emit('let go card', { type, text });
   });
 
-  socket.on('card is flipped', function ({isFlipped, text}) {
-    this.broadcast.to(socket.roomId).emit('card is flipped', {isFlipped, text});
+  socket.on('card is flipped', function ({ isFlipped, text }) {
+    this.broadcast.to(socket.roomId).emit('card is flipped', { isFlipped, text });
   });
 
   // when someone changes their player name,
   // update players name property and emit back
-  socket.on('name change', function ({id, name}) {
+  socket.on('name change', function ({ id, name }) {
     if (!socket.roomId && !rooms[socket.roomId]) {
       return;
     }
-    if (
-      rooms[socket.roomId].players.length <= MAX_PLAYERS &&
-      rooms[socket.roomId].players.find((player) => player.id === id)
-    ) {
-      rooms[socket.roomId].players.find(
-        (player) => player.id === id
-      ).name = name;
+    if (rooms[socket.roomId].players.length <= MAX_PLAYERS && rooms[socket.roomId].players.find((player) => player.id === id)) {
+      rooms[socket.roomId].players.find((player) => player.id === id).name = name;
       io.to(socket.roomId).emit('name change', rooms[socket.roomId].players);
     }
   });
 
-  socket.on('name submit', function ({players: newPlayers, myName, id}) {
+  socket.on('name submit', function ({ players: newPlayers, myName, id }) {
     if (!socket.roomId && !rooms[socket.roomId]) {
       return;
     }
-    const matchedPlayerThatLeft = rooms[socket.roomId].playersThatLeft.find(
-      (player) => player.name === myName
-    );
+    const matchedPlayerThatLeft = rooms[socket.roomId].playersThatLeft.find((player) => player.name === myName);
     if (myName !== 'NEW USER' && matchedPlayerThatLeft) {
-      const playerIndex = rooms[socket.roomId].players.findIndex(
-        (player) => player.id === id
-      );
+      const playerIndex = rooms[socket.roomId].players.findIndex((player) => player.id === id);
       rooms[socket.roomId].players[playerIndex] = matchedPlayerThatLeft;
       rooms[socket.roomId].players[playerIndex].id = id;
       io.to(socket.roomId).emit('player rejoins', rooms[socket.roomId].players);
@@ -277,9 +231,7 @@ io.on("connection", function (socket) {
       }));
 
       // add seven white cards to a users deck once they submit a name
-      const playerThatJoined = rooms[socket.roomId].players.find(
-        (player) => player.id === id
-      );
+      const playerThatJoined = rooms[socket.roomId].players.find((player) => player.id === id);
       playerThatJoined.whiteCards = modifiedSevenWhiteCards;
 
       // emit update back to clients
@@ -292,10 +244,8 @@ io.on("connection", function (socket) {
     }
   });
 
-  socket.on('sent message to chat', function ({msg, from}) {
-    this.broadcast
-      .to(socket.roomId)
-      .emit('receive message from chat', {msg, from});
+  socket.on('sent message to chat', function ({ msg, from }) {
+    this.broadcast.to(socket.roomId).emit('receive message from chat', { msg, from });
   });
 
   // when a specific player disconnects
@@ -320,31 +270,20 @@ io.on("connection", function (socket) {
     if (rooms[socket.roomId] && rooms[socket.roomId].playersThatLeft) {
       rooms[socket.roomId].timer = setTimeout(() => {
         rooms[socket.roomId].playersThatLeft.length = 0;
-        console.log(
-          'cleared playersThatLeft ',
-          rooms[socket.roomId].playersThatLeft
-        );
+        console.log('cleared playersThatLeft ', rooms[socket.roomId].playersThatLeft);
       }, 600000);
     }
 
-    const playerThatLeft = rooms[socket.roomId].players.find(
-      (user) => user.id === socket.id
-    );
+    const playerThatLeft = rooms[socket.roomId].players.find((user) => user.id === socket.id);
 
     if (playerThatLeft) {
       // find the player that lefts index by the name
-      const playerThatLeftIndex = rooms[
-        socket.roomId
-      ].playersThatLeft.findIndex((player) => {
+      const playerThatLeftIndex = rooms[socket.roomId].playersThatLeft.findIndex((player) => {
         return player.id === playerThatLeft.id;
       });
 
       // if the player that left already left before, remove them from playersThatLeft
-      if (
-        rooms[socket.roomId].playersThatLeft.find(
-          (player) => player.id === playerThatLeft.id
-        )
-      ) {
+      if (rooms[socket.roomId].playersThatLeft.find((player) => player.id === playerThatLeft.id)) {
         rooms[socket.roomId].playersThatLeft.splice(playerThatLeftIndex, 1);
       }
 
@@ -358,17 +297,10 @@ io.on("connection", function (socket) {
       );
     }
 
-    io.to(socket.roomId).emit(
-      'user disconnected',
-      rooms[socket.roomId].players
-    );
+    io.to(socket.roomId).emit('user disconnected', rooms[socket.roomId].players);
     console.log('user disconnected: ', socket.id);
 
-    if (
-      rooms[socket.roomId] &&
-      rooms[socket.roomId].players &&
-      rooms[socket.roomId].playersThatLeft
-    ) {
+    if (rooms[socket.roomId] && rooms[socket.roomId].players && rooms[socket.roomId].playersThatLeft) {
       console.log({
         players: rooms[socket.roomId].players,
         playersThatLeft: rooms[socket.roomId].playersThatLeft,
