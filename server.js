@@ -19,7 +19,7 @@ mongoose
 
 var rooms = {};
 
-app.set('trust proxy', 1);
+app.set('trust proxy', true);
 app.use(bodyParser.json());
 // Test the IP
 app.get('/ipCheckADoodleSleeve', (req, res) => {
