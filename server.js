@@ -22,7 +22,14 @@ var rooms = {};
 app.set('trust proxy', 1);
 app.use(bodyParser.json());
 // Test the IP
-app.get('/ipCheckADoodleSleeve', (request, response) => response.send(request.ip));
+app.get('/ipCheckADoodleSleeve', (req, res) => {
+  const forwardedFor = req.headers['x-forwarded-for'];
+  const clientIp = req.ip;
+  res.json({
+    xForwardedFor: forwardedFor,
+    ip: clientIp,
+  });
+});
 app.use('/', router);
 
 const MAX_PLAYERS = 8;
