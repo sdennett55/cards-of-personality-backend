@@ -25,8 +25,10 @@ app.use(bodyParser.json());
 app.get('/ipCheckADoodleSleeve', (req, res) => {
   const forwardedFor = req.headers['x-forwarded-for'];
   const clientIp = req.ip;
+  const trueClientIp = req.headers['true-client-ip'];
   res.json({
     xForwardedFor: forwardedFor,
+    trueClientIp,
     ip: clientIp,
   });
 });
